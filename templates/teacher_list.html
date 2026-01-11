@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Teachers - SDS{% endblock %}
+
+{% block content %}
+
+<h2>Services</h2>
+
+<p class="text-success"><strong>If you can see this page in PythonAnywhere, then your database and connect.py 
+    are correctly configured.</strong>  </p>
+
+<table class="table">
+    <tr>
+        <th>Teacher ID</th>
+        <th>Name</th>
+    </tr>
+    {% for teacher in teachers %}
+    <tr>
+        <td>{{ teacher.teacher_id }}</td>
+        <td>{{teacher.first_name}} {{teacher.last_name}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock %}

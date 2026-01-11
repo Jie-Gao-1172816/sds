@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="utf-8" />
+      <title>{% block title %}{% endblock %}</title>
+      <!-- CSS only -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  </head>
+
+  <body>
+
+    <nav>
+      <h2>Selwyn Dance School | SDS</h2>
+      <p><a href="{{url_for('home')}}">Home</a></p>
+      <p><a href="{{url_for('teacher_list')}}">Teachers</a></p>
+      <p><a href="{{url_for('student_list')}}">Students</a></p>
+    </nav>
+          
+
+    <div class="container my-4">
+      <section class="content">
+        <header>
+          {% block header %}
+          <!-- Nested template title appears here -->
+          {% endblock %}
+        </header>
+        <!-- This displays flash messages at the top of the page -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+        <div class="container mt-3">
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %} {% endif %} {% endwith %}
+
+        {% block content %}
+        <!-- Nested template content appears here -->
+        {% endblock %}
+      </section>
+    </div>
+
+
+    <!-- JavaScript Bundle with Popper -->
+    <script> 
+    // Example starter JavaScript for disabling form submissions if there are invalid fields
+      (() => {
+        'use strict'
+      
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        const forms = document.querySelectorAll('.needs-validation')
+      
+        // Loop over them and prevent submission
+        Array.from(forms).forEach(form => {
+          form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            }
+      
+            form.classList.add('was-validated')
+          }, false)
+        })
+      })()
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  </body>
+</html>
