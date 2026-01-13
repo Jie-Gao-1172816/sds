@@ -1,48 +1,47 @@
-from flask import Flask, render_template, request, redirect
-import db, connect
+from flask import Flask
+from flask import render_template
+from flask import request
+from flask import redirect
+from flask import url_for
+from flask import flash
+import db
+import connect
+from datetime import datetime
+
 
 app = Flask(__name__)
-connection = db.init_db(app, user=connect.dbuser, password=connect.dbpass, host=connect.dbhost,database=connect.dbname, port=connect.dbport, autocommit=True)
+app.secret_key = 'sds_secret_2025'  # Set a secret key for session/flash
+
+# Initialize database connection
+db.init_db(
+    app, connect.dbuser, connect.dbpass, connect.dbhost, connect.dbname, connect.dbport
+)
 
 
-@app.route('/')
-def index():
-    cur = db.get_cursor()
-    cur.execute("SELECT * from people;")
-    results = cur.fetchall()
-    #print(results)
-    #for row in results:
-     #   print(f" {row['name']} is ID {row['id']} \n")
-   # return "Check console for database query results."
-    cur.close()
-    return render_template('results.html', people=results)
+@app.route("/")
+def home():
+    return render_template("home.html")
 
-@app.route('/details')
-def details():
-    #print(request.args)
-    id = request.args.get('id')
-    cur = db.get_cursor()
-    cur.execute("SELECT * from people where id = %s;", (id,))
-    result = cur.fetchone()
-    print(result)
-    cur.close()
-    return render_template('details.html', person=result)
 
-@app.route('/details/update', methods=['POST'])
-def update_details():
-    print(request.form)
-    id = request.form.get('id')
-    name = request.form.get('name')
-    city = request.form.get('city')
-    sex = request.form.get('sex')
-    age = request.form.get('age')
-    weight = request.form.get('weight')
+@app.route("/teachers", methods=["GET"])
+def teacher_list():
+    cursor = db.get_cursor()
+    # List all teachers        
+    querystr = "SELECT teacher_id, first_name, last_name FROM teachers;" 
+    cursor.execute(querystr)        
+    teachers = cursor.fetchall()
+    cursor.close()
+    if True:  # Example condition for a flash message
+        flash("Example of a flash message. Optional, but good for error or confirmation " \
+            "messages when used with an IF statement.", "info")
+    return render_template("teacher_list.html", teachers=teachers)
 
-# UPDATE table_name
-# SET column1 = value1, column2 = value2, ...
-# WHERE condition;
-    cur = db.get_cursor()
-    cur.execute("UPDATE people SET name = %s, city = %s, sex = %s, age = %s, weight = %s WHERE id = %s;", (name, city, sex, age, weight, id))
-    cur.close()
-    #result = {'name': "Edited Name", 'city': "Edited City"}
-    return redirect(f'/details?id={id}')
+
+@app.route("/students")
+def student_list():
+    # Add your code here to list customers
+    return render_template("student_list.html")
+
+
+# Add other routes and view functions as required.
+
