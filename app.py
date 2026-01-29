@@ -1,3 +1,4 @@
+from email import errors
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -6,7 +7,7 @@ from flask import url_for
 from flask import flash
 import db
 import connect
-from datetime import datetime
+from datetime import date, datetime
 
 
 app = Flask(__name__)
@@ -91,6 +92,84 @@ def class_list():
     cursor.close()
 
     return render_template("class_list.html", classes=classes)
+
+
+
+
+# edit student
+@app.route('/student/edit', methods=['GET', 'POST'])
+def edit_student():
+    if request.method == 'POST':
+        # ===== UPDATE (edit existing student) =====
+        sid = request.form.get('student_id')
+
+        first_name = request.form.get('first_name')
+        last_name  = request.form.get('last_name')
+        email      = request.form.get('email') or None
+        phone      = request.form.get('phone') or None
+        dob        = request.form.get('date_of_birth') or None
+
+        cur = db.get_cursor()
+        cur.execute("""
+            UPDATE students
+            SET first_name=%s, last_name=%s, email=%s, phone=%s, date_of_birth=%s
+            WHERE student_id=%s;
+        """, (first_name, last_name, email, phone, dob, sid))
+        cur.close()
+
+        return redirect(url_for('student_list'))
+
+    # ===== GET: show form =====
+    sid = request.args.get('student_id')
+
+    if sid is None:
+        # Add page (blank)
+        return render_template(
+            'student_edit.html',
+            edit=False,
+            student={'enrollment_date': date.today().isoformat()},
+            today=date.today().isoformat()
+        )
+    else:
+        # Edit page (load from DB)
+        cur = db.get_cursor()
+        cur.execute("""
+            SELECT student_id, first_name, last_name, email, phone, date_of_birth, enrollment_date
+            FROM students
+            WHERE student_id=%s;
+        """, (sid,))
+        student = cur.fetchone()
+        cur.close()
+
+        return render_template(
+            'student_edit.html',
+            edit=True,
+            student=student,
+            today=date.today().isoformat()
+        )
+
+
+# POST only: INSERT (add new student)
+@app.route('/student/add', methods=['POST'])
+def add_student():
+    first_name = request.form.get('first_name')
+    last_name  = request.form.get('last_name')
+    email      = request.form.get('email') or None
+    phone      = request.form.get('phone') or None
+    dob        = request.form.get('date_of_birth') or None
+
+    # enrollment_date: if blank, set to today (先简单)
+    enrollment_date = request.form.get('enrollment_date') or date.today().isoformat()
+
+    cur = db.get_cursor()
+    cur.execute("""
+        INSERT INTO students (first_name, last_name, email, phone, date_of_birth, enrollment_date)
+        VALUES (%s,%s,%s,%s,%s,%s);
+    """, (first_name, last_name, email, phone, dob, enrollment_date))
+    cur.close()
+
+    return redirect(url_for('student_list'))
+
 # Add other routes and view functions as required.
 @app.route("/students/<int:student_id>")
 def class_summary(student_id):
