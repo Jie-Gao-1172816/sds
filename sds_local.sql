@@ -80,6 +80,9 @@ CREATE TABLE studentgrades (
 
 
 
+
+
+
 INSERT INTO dancetype (dancetype_name) VALUES
 ('Ballet'),
 ('Jazz'),
@@ -181,3 +184,5 @@ INSERT INTO studentclasses (student_id, class_id) VALUES
 (9, 1),
 (10, 2),
 (10, 5);
+
+

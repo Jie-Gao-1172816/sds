@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Enrol in a Class</h2>
+
+<p>
+  <strong>Student:</strong>
+  {{ student['last_name'] }}, {{ student['first_name'] }}
+  <span class="text-muted">(ID: {{ student['student_id'] }})</span>
+</p>
+
+{% if eligible_classes and eligible_classes|length > 0 %}
+<form method="post" action="{{ url_for('student_enrol') }}">
+  <input type="hidden" name="student_id" value="{{ student['student_id'] }}">
+
+  <div class="mb-3">
+    <label class="form-label">Select a class</label>
+    <select name="class_id" class="form-select" required>
+      {% for c in eligible_classes %}
+        <option value="{{ c['class_id'] }}">
+          {{ c['dancetype_name'] }} - {{ c['class_name'] }}
+          (Grade {{ c['grade_level'] }} {{ c['grade_name'] }})
+          - {{ c['schedule_day'] }} {{ c['schedule_time'] }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <button class="btn btn-primary" type="submit">Enrol</button>
+  <a class="btn btn-secondary"
+     href="{{ url_for('student_class_summary', student_id=student['student_id']) }}">
+    Cancel
+  </a>
+</form>
+{% else %}
+<div class="alert alert-warning">
+  No eligible classes available for this student.
+</div>
+<a class="btn btn-secondary"
+   href="{{ url_for('student_class_summary', student_id=student['student_id']) }}">
+  Back
+</a>
+{% endif %}
+
+{% endblock %}

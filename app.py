@@ -48,7 +48,7 @@ def student_list():
         query = """
         SELECT s.student_id, s.first_name, s.last_name, s.email, s.date_of_birth, s.phone, s.enrollment_date, sc.class_id
         FROM students s
-        JOIN studentclasses sc ON s.student_id = sc.student_id
+        LEFT JOIN studentclasses sc ON s.student_id = sc.student_id
         WHERE s.first_name LIKE %s OR s.last_name LIKE %s
         ORDER BY s.last_name, s.first_name
         """
@@ -57,7 +57,7 @@ def student_list():
         query = """
         SELECT s.student_id, s.first_name, s.last_name, s.email, s.date_of_birth, s.phone, s.enrollment_date, sc.class_id
         FROM students s
-        JOIN studentclasses sc ON s.student_id = sc.student_id
+        LEFT JOIN studentclasses sc ON s.student_id = sc.student_id
         ORDER BY s.last_name, s.first_name
         """
         cursor.execute(query)
@@ -171,7 +171,207 @@ def add_student():
     return redirect(url_for('student_list'))
 
 # Add other routes and view functions as required.
-@app.route("/students/<int:student_id>")
-def class_summary(student_id):
-    return f"Class summary for student {student_id}"
+@app.route('/student/class-summary')
+def student_class_summary():
+    sid = request.args.get('student_id')
+    if not sid:
+        return redirect(url_for('student_list'))
 
+    cur = db.get_cursor()
+
+    # Retrieve basic student information (used for page heading)
+    cur.execute("""
+        SELECT student_id, first_name, last_name, email, phone, date_of_birth
+        FROM students
+        WHERE student_id=%s;
+    """, (sid,))
+    student = cur.fetchone()
+
+    # If the student does not exist, return to the student list
+    if not student:
+        cur.close()
+        return redirect(url_for('student_list'))
+
+    # Retrieve all classes the student is enrolled in
+    # A single JOIN query is used for efficiency
+    # If the student has no enrolled classes, an empty list will be returned
+    cur.execute("""
+    SELECT
+        c.class_id,
+        c.class_name,
+        c.teacher_id,
+        c.schedule_day,
+        c.schedule_time
+    FROM studentclasses sc
+    JOIN classes c ON c.class_id = sc.class_id
+    WHERE sc.student_id=%s
+    ORDER BY c.class_name;
+     """, (sid,))
+    classes = cur.fetchall()
+
+    cur.close()
+
+    return render_template(
+        "student_class_summary.html",
+        student=student,
+        classes=classes
+    )
+
+  
+    
+    
+
+@app.route('/student/enrol', methods=['GET', 'POST'])
+def student_enrol():
+
+    # ===== POST: save enrolment =====
+    if request.method == 'POST':
+        sid = request.form.get('student_id')
+        class_id = request.form.get('class_id')
+
+        if not sid or not class_id:
+            return redirect(url_for('student_list'))
+
+        cur = db.get_cursor()
+
+        # Insert enrolment (studentclasses has a UNIQUE (student_id, class_id) constraint)
+        # so duplicates are prevented at the database level as well.
+        try:
+            cur.execute("""
+                INSERT INTO studentclasses (student_id, class_id)
+                VALUES (%s, %s);
+            """, (sid, class_id))
+            # Commit here if your connection is not autocommit
+            # db.connection.commit()
+        except Exception:
+            # If a duplicate is attempted, the UNIQUE constraint will raise an error.
+            # We can safely ignore and redirect back.
+            pass
+
+        cur.close()
+        return redirect(url_for('student_class_summary', student_id=sid))
+
+    # ===== GET: display enrolment form =====
+    sid = request.args.get('student_id')
+    if not sid:
+        return redirect(url_for('student_list'))
+
+    cur = db.get_cursor()
+
+    # Retrieve student basic info (for page heading)
+    cur.execute("""
+        SELECT student_id, first_name, last_name
+        FROM students
+        WHERE student_id=%s;
+    """, (sid,))
+    student = cur.fetchone()
+
+    if not student:
+        cur.close()
+        return redirect(url_for('student_list'))
+
+    # Retrieve eligible classes:
+    # - Student must be qualified in the same dance type at the class grade level
+    #   OR one grade level above
+    # - Exclude classes the student is already enrolled in
+    cur.execute("""
+        SELECT
+            c.class_id,
+            c.class_name,
+            dt.dancetype_name,
+            g.grade_level,
+            g.grade_name,
+            c.schedule_day,
+            c.schedule_time
+        FROM classes c
+        JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
+        LEFT JOIN grades g ON c.grade_id = g.grade_id
+        WHERE
+          EXISTS (
+            SELECT 1
+            FROM studentgrades sg
+            JOIN grades gg ON sg.grade_id = gg.grade_id
+            JOIN grades cg ON c.grade_id = cg.grade_id
+            WHERE sg.student_id = %s
+              AND sg.dancetype_id = c.dancetype_id
+              AND cg.grade_level IN (gg.grade_level, gg.grade_level + 1)
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM studentclasses sc
+            WHERE sc.student_id = %s AND sc.class_id = c.class_id
+          )
+        ORDER BY dt.dancetype_name, g.grade_level, c.class_name;
+    """, (sid, sid))
+    eligible_classes = cur.fetchall()
+
+    cur.close()
+
+    return render_template(
+        'student_enrol.html',
+        student=student,
+        eligible_classes=eligible_classes
+    )
+
+
+
+@app.route('/teachers/report')
+def teacher_report():
+    cur = db.get_cursor()
+
+    # Teachers -> Classes -> Studentclasses (LEFT JOIN keeps teachers even if no classes/students)
+    cur.execute("""
+        SELECT
+            t.teacher_id,
+            t.first_name,
+            t.last_name,
+            c.class_id,
+            c.class_name,
+            COUNT(sc.student_id) AS student_count
+        FROM teachers t
+        LEFT JOIN classes c ON c.teacher_id = t.teacher_id
+        LEFT JOIN studentclasses sc ON sc.class_id = c.class_id
+        GROUP BY t.teacher_id, t.first_name, t.last_name, c.class_id, c.class_name
+        ORDER BY t.last_name, t.first_name, c.class_name;
+    """)
+    rows = cur.fetchall()
+
+    cur.execute("""
+        SELECT
+            t.teacher_id,
+            COUNT(DISTINCT sc.student_id) AS total_students
+        FROM teachers t
+        LEFT JOIN classes c ON c.teacher_id = t.teacher_id
+        LEFT JOIN studentclasses sc ON sc.class_id = c.class_id
+        GROUP BY t.teacher_id;
+    """)
+    totals = {r['teacher_id']: r['total_students'] for r in cur.fetchall()}
+
+    cur.close()
+
+    # Build report structure for template
+    report = []
+    current_tid = None
+    teacher_block = None
+
+    for r in rows:
+        tid = r['teacher_id']
+
+        if current_tid != tid:
+            current_tid = tid
+            teacher_block = {
+                'teacher_id': tid,
+                'first_name': r['first_name'],
+                'last_name': r['last_name'],
+                'total_students': totals.get(tid, 0),
+                'classes': []
+            }
+            report.append(teacher_block)
+
+        if r['class_id'] is not None:
+            teacher_block['classes'].append({
+                'class_name': r['class_name'],
+                'student_count': r['student_count']
+            })
+
+    return render_template("teacher_report.html", report=report)

@@ -1,7 +1,11 @@
 {% extends "base.html" %}
+
+{% block title %}{% if edit %}Edit Student{% else %}Add Student{% endif %} - SDS{% endblock %}
+
 {% block content %}
 
 <h2>{% if edit %}Edit Student{% else %}Add Student{% endif %}</h2>
+
 
 {% if edit %}
 <form action="/student/edit" method="post">

@@ -18,20 +18,50 @@
       Selwyn Dance School <span class="text-muted fw-normal">| SDS</span>
     </div>
 
-    <nav class="d-flex gap-4">
-      <a href="{{ url_for('home') }}" class="text-dark text-decoration-none fw-medium">
-        Home
-      </a>
-      <a href="{{ url_for('teacher_list') }}" class="text-dark text-decoration-none fw-medium">
-        Teachers
-      </a>
-      <a href="{{ url_for('student_list') }}" class="text-dark text-decoration-none fw-medium">
-        Students
-      </a>
-      <a href="{{ url_for('class_list') }}" class="text-dark text-decoration-none fw-medium">
-        Classes
-      </a>
-    </nav>
+   <nav class="d-flex gap-4 align-items-center">
+
+  <a href="{{ url_for('home') }}"
+     class="text-dark text-decoration-none fw-medium">
+    Home
+  </a>
+
+  <!-- Teachers dropdown -->
+  <div class="dropdown">
+    <a class="text-dark text-decoration-none fw-medium dropdown-toggle"
+       href="#"
+       role="button"
+       data-bs-toggle="dropdown"
+       aria-expanded="false">
+      Teachers
+    </a>
+
+    <ul class="dropdown-menu">
+      <li>
+        <a class="dropdown-item"
+           href="{{ url_for('teacher_list') }}">
+          Teacher List
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item"
+           href="{{ url_for('teacher_report') }}">
+          Teacher Report
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <a href="{{ url_for('student_list') }}"
+     class="text-dark text-decoration-none fw-medium">
+    Students
+  </a>
+
+  <a href="{{ url_for('class_list') }}"
+     class="text-dark text-decoration-none fw-medium">
+    Classes
+  </a>
+
+</nav>
 
   </div>
 </header>

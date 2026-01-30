@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Student Class Summary</h2>
+
+<div class="mb-3">
+  <strong>Student:</strong>
+  {{ student.last_name }}, {{ student.first_name }}
+  <span class="text-muted">
+    (ID: {{ student.student_id }})
+  </span>
+</div>
+
+{% if classes and classes|length > 0 %}
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Class ID</th>
+      <th>Class Name</th>
+      <th>Teacher</th>
+      <th>Day</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in classes %}
+    <tr>
+      <td>{{ c.class_id }}</td>
+      <td>{{ c.class_name }}</td>
+      <td>{{ c.teacher_id }}</td>
+      <td>{{ c.schedule_day }}</td>
+      <td>{{ c.schedule_time }}</td>
+
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% else %}
+
+<div class="alert alert-warning">
+  This student is not enrolled in any classes.
+</div>
+
+{% endif %}
+
+<div class="mt-4">
+  <a class="btn btn-secondary" href="{{ url_for('student_list') }}">
+    Back to Student List
+  </a>
+
+  {#  New Enrolment  #}
+  
+  <a class="btn btn-primary"
+     href="{{ url_for('student_enrol', student_id=student.student_id) }}">
+    Enrol in a Class
+  </a>
+  
+</div>
+
+{% endblock %}
