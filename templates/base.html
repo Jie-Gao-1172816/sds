@@ -5,79 +5,80 @@
       <title>{% block title %}{% endblock %}</title>
       <!-- CSS only -->
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-  </head>
+      <style>
+      </style>
 
-  <body class="bg-light">
-    <div class="bg-light min-vh-100">
+    </head>
 
-      <!-- Header / Navigation bar -->
-    <header class="bg-white border-bottom">
-  <div class="container py-3 d-flex justify-content-between align-items-center">
+<body class="bg-body-tertiary">
+  <div class="bg-light min-vh-100">
 
-    <div class="fw-semibold fs-4">
-      Selwyn Dance School <span class="text-muted fw-normal">| SDS</span>
-    </div>
+    <!-- Header / Navigation bar -->
+    <header class="bg-light border-bottom shadow-sm sticky-top">
 
-   <nav class="d-flex gap-4 align-items-center">
+      <div class="container py-3 d-flex justify-content-between align-items-center">
 
-  <a href="{{ url_for('home') }}"
-     class="text-dark text-decoration-none fw-medium">
-    Home
-  </a>
+        <div class="fw-semibold fs-4">
+        Selwyn Dance School <span class="text-muted fw-normal">| SDS</span>
+        </div>
 
-  <!-- Teachers dropdown -->
-  <div class="dropdown">
-    <a class="text-dark text-decoration-none fw-medium dropdown-toggle"
-       href="#"
-       role="button"
-       data-bs-toggle="dropdown"
-       aria-expanded="false">
-      Teachers
-    </a>
+        <nav class="d-flex gap-4 align-items-center">
 
-    <ul class="dropdown-menu">
-      <li>
-        <a class="dropdown-item"
-           href="{{ url_for('teacher_list') }}">
-          Teacher List
-        </a>
-      </li>
-      <li>
-        <a class="dropdown-item"
-           href="{{ url_for('teacher_report') }}">
-          Teacher Report
-        </a>
-      </li>
-    </ul>
-  </div>
+          <a href="{{ url_for('home') }}"
+          class="text-dark text-decoration-none fw-medium">
+          Home
+          </a>
 
-  <a href="{{ url_for('student_list') }}"
-     class="text-dark text-decoration-none fw-medium">
-    Students
-  </a>
+          <!-- Teachers dropdown -->
+          <div class="dropdown">
+            <a class="text-dark text-decoration-none fw-medium dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Teachers
+            </a>
 
-  <a href="{{ url_for('class_list') }}"
-     class="text-dark text-decoration-none fw-medium">
-    Classes
-  </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item"
+                  href="{{ url_for('teacher_list') }}">
+                  Teacher List</a>
+              </li>
+              <li><a class="dropdown-item"
+                  href="{{ url_for('teacher_report') }}">
+                  Teacher Report</a>
+              </li>
+            </ul>
+          </div>
 
-</nav>
+          <a href="{{ url_for('student_list') }}"
+          class="text-dark text-decoration-none fw-medium">
+          Students
+          </a>
 
-  </div>
-</header>
+          <a href="{{ url_for('class_list') }}"
+          class="text-dark text-decoration-none fw-medium">
+          Classes
+          </a>
+
+        </nav>
+
+      </div>
+    </header>
 
 
           
-
-    <div class="container  bg-light my-4">
+    
+    <main class="container my-4 flex-grow-1">  
       <section class="content">
         <header>
           {% block header %}
           <!-- Nested template title appears here -->
           {% endblock %}
         </header>
+         
         <!-- This displays flash messages at the top of the page -->
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+         {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
         <div class="container mt-3">
             <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
                 {{ message }}
@@ -85,28 +86,59 @@
             </div>
         </div>
         {% endfor %} {% endif %} {% endwith %}
-
+       
         {% block content %}
         <!-- Nested template content appears here -->
         {% endblock %}
+        
       </section>
+     
+    </main>
+   
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light mt-auto sticky-footer">
+  <div class="container py-5">
+    <div class="row g-4">
+
+      <div class="col-md-4">
+        <h6 class="text-uppercase fw-semibold mb-3">Selwyn Dance School</h6>
+        <p class="small text-secondary mb-1">
+          Fostering confidence,
+        </p>
+        <p class="small text-secondary mb-1">
+          creativity,
+        </p>
+        <p class="small text-secondary mb-1">
+          and technical skill.
+        </p>
+        <p class="small text-secondary mb-0">
+          Selwyn, New Zealand
+        </p>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="text-uppercase fw-semibold mb-3">Quick Links</h6>
+        <ul class="list-unstyled">
+          <li><a href="{{ url_for('home') }}" class="text-secondary text-decoration-none text-hover-primary">Home</a></li>
+          <li><a href="{{ url_for('student_list') }}" class="text-secondary text-decoration-none text-hover-primary">Students</a></li>
+          <li><a href="{{ url_for('teacher_list') }}" class="text-secondary text-decoration-none text-hover-primary">Teachers</a></li>
+          <li><a href="{{ url_for('class_list') }}" class="text-secondary text-decoration-none text-hover-primary">Classes</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="text-uppercase fw-semibold mb-3">Contact</h6>
+        <p class="small text-secondary mb-1">Email: info@sds-demo.nz</p>
+        <p class="small text-secondary mb-1">Phone: 09 123 4567</p>
+        <p class="small text-secondary mb-0">Selwyn, New Zealand</p>
+      </div>
+
     </div>
 
-
-   <!-- Footer -->
-    <footer class="bg-dark text-light mt-5">
-  <div class="container py-5 text-center">
-
-    <div class="fw-semibold mb-4">
-      Contact Us
+    <div class="text-center small text-secondary mt-4">
+      © 2026 Selwyn Dance School · Educational project for COMP636
     </div>
-
-    <div class="d-flex flex-wrap justify-content-between small text-secondary">
-      <div>Email: info@sds-demo.nz</div>
-      <div>Phone: 09 123 4567</div>
-      <div>Address: 12 **** Road, Selwyn, New Zealand</div>
-    </div>
-
   </div>
 </footer>
 

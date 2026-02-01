@@ -1,55 +1,40 @@
 {% extends "base.html" %}
 
-{% block title %}Home - SVS{% endblock %}
+{% block title %}Home - SDS{% endblock %}
 
 {% block content %}
 
+<!-- Hero image-->
+<div class="container-fluid px-0">
+  <!-- Give the hero some breathing space from the header -->
+  <div class="bg-light py-3">
+    <div class="container">
+      <div class="rounded-4 overflow-hidden shadow" style="height: 65vh;">
+        <!-- Hero image -->
+        <img
+          src="{{ url_for('static', filename='images/dance-hero.jpg') }}"
+          class="w-100 h-100 object-fit-cover"
+          alt="Students at Selwyn Dance School">
+      </div>
 
-
-<!-- Hero image -->
-<div class="container-fluid mt-4 mb-5 px-1">
-  <img
-    src="{{ url_for('static', filename='images/dance-hero.jpg') }}"
-    class="img-fluid w-100 rounded-4 shadow"
-    alt="Students at Selwyn Dance School"
-  >
-</div>
-
-
-
-
-<!-- Intro text -->
- <div class="bg-white rounded-3 py-5 px-4 shadow-sm">
-  
-
-
-<div class="row justify-content-center mt-5">
-  <div class="col-lg-8 text-center">
-
-    <h2 class="fw-semibold mb-3">
-      A Supportive Environment for Every Dancer
-    </h2>
-
-    <p class="text-muted fs-5">
-      Selwyn Dance School fosters confidence, creativity, and technical skill
-      across a wide range of dance styles and levels.
-    </p>
-
+    </div>
   </div>
 </div>
+
+<!-- Intro section (card-style, not a giant white block) -->
+<div class="bg-light py-5">
+  <div class="container">
+    <div class="bg-white rounded-4 shadow-sm p-5 text-center">
+
+      <h1 class="fw-semibold mb-3">Welcome to Selwyn Dance School</h1>
+
+      <p class="text-muted mb-0 mx-auto" style="max-width: 720px;">
+        Selwyn Dance School fosters confidence, creativity, and technical skill
+        across a wide range of dance styles and levels.
+      </p>
+
+    </div>
+  </div>
 </div>
-
-
-
-<!-- for better formatting,  remove the following text
-
-<h2>Home </h2>
-
-
-<p class="text-success"><strong>If you can see this in PythonAnywhere, your app is loading correctly. </strong> </p>
-
-
-<p>Add some brief text and an image here </p>-->
-
 
 {% endblock %}

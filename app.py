@@ -42,23 +42,35 @@ def teacher_list():
 def student_list():
     cursor = db.get_cursor()
 
-    q = request.args.get("q")
+    # Get search term (trim whitespace)
+    q = request.args.get("q", "").strip()
 
-    if q:
-        query = """
-        SELECT s.student_id, s.first_name, s.last_name, s.email, s.date_of_birth, s.phone, s.enrollment_date, sc.class_id
+    # Base query (used for both list and search)
+    base_query = """
+        SELECT
+            s.student_id, s.first_name, s.last_name,
+            s.email, s.date_of_birth, s.phone, s.enrollment_date,
+            sc.class_id
         FROM students s
         LEFT JOIN studentclasses sc ON s.student_id = sc.student_id
-        WHERE s.first_name LIKE %s OR s.last_name LIKE %s
-        ORDER BY s.last_name, s.first_name
+    """
+
+    # If the user clicked "Search" but submitted an empty query,
+    # show an info message and fall back to displaying all students.
+    if "q" in request.args and q == "":
+        flash("No search term entered. Showing all students.", "info")
+
+    # If there is a non-empty search term, filter by first/last name (partial match)
+    if q != "":
+        query = base_query + """
+            WHERE s.first_name LIKE %s OR s.last_name LIKE %s
+            ORDER BY s.last_name, s.first_name
         """
         cursor.execute(query, (f"%{q}%", f"%{q}%"))
     else:
-        query = """
-        SELECT s.student_id, s.first_name, s.last_name, s.email, s.date_of_birth, s.phone, s.enrollment_date, sc.class_id
-        FROM students s
-        LEFT JOIN studentclasses sc ON s.student_id = sc.student_id
-        ORDER BY s.last_name, s.first_name
+        # Otherwise, show all students (alphabetical order)
+        query = base_query + """
+            ORDER BY s.last_name, s.first_name
         """
         cursor.execute(query)
 
