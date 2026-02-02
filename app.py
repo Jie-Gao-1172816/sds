@@ -47,12 +47,11 @@ def student_list():
 
     # Base query (used for both list and search)
     base_query = """
-        SELECT
-            s.student_id, s.first_name, s.last_name,
-            s.email, s.date_of_birth, s.phone, s.enrollment_date,
-            sc.class_id
+        SELECT DISTINCT
+            s.student_id, s.first_name, s.last_name,s.email,
+            s.date_of_birth, s.phone, s.enrollment_date
         FROM students s
-        LEFT JOIN studentclasses sc ON s.student_id = sc.student_id
+      
     """
 
     # If the user clicked "Search" but submitted an empty query,
@@ -69,23 +68,35 @@ def student_list():
         cursor.execute(query, (f"%{q}%", f"%{q}%"))
     else:
         # Otherwise, show all students (alphabetical order)
+    
         query = base_query + """
             ORDER BY s.last_name, s.first_name
         """
         cursor.execute(query)
 
     students = cursor.fetchall()
+    # If a search was performed but no results found, show a warning message
+    if q and len(students) == 0:
+       flash("No students matched your search.", "warning")
     cursor.close()
 
     return render_template("student_list.html", students=students)
 
+
 @app.route("/classes")
 def class_list():
     cursor = db.get_cursor()
+
+    # Query to display:
+    # - all classes (even if no students enrolled)
+    # - shown by Dance Type and in grade order， considering NULL grades as lowest
+    # - and any enrolled students listed under each class
     query = """
     SELECT
         c.class_id AS class_id,
         c.class_name AS class_name,
+        c.schedule_day AS schedule_day,
+        c.schedule_time AS schedule_time,
         dt.dancetype_name AS dance_type,
         g.grade_level AS grade_level,
         g.grade_name AS grade_name,
@@ -97,13 +108,15 @@ def class_list():
     LEFT JOIN grades g ON c.grade_id = g.grade_id
     LEFT JOIN studentclasses sc ON c.class_id = sc.class_id
     LEFT JOIN students s ON sc.student_id = s.student_id
-    ORDER BY dt.dancetype_name, g.grade_level, c.class_name, s.last_name, s.first_name;
+    ORDER BY dt.dancetype_name,  (g.grade_level IS NULL), g.grade_level, c.class_name, s.last_name, s.first_name;
     """
+ 
     cursor.execute(query)
     classes = cursor.fetchall()
     cursor.close()
 
     return render_template("class_list.html", classes=classes)
+
 
 
 
@@ -182,55 +195,81 @@ def add_student():
 
     return redirect(url_for('student_list'))
 
-# Add other routes and view functions as required.
+
+
+
+# Student Class Summary
 @app.route('/student/class-summary')
 def student_class_summary():
+
     sid = request.args.get('student_id')
     if not sid:
         return redirect(url_for('student_list'))
 
     cur = db.get_cursor()
 
-    # Retrieve basic student information (used for page heading)
+    # --------------------------------------------------
+    # 1) Retrieve basic student information
+    #    This confirms the student exists and provides
+    #    data for the page heading.
+    # --------------------------------------------------
     cur.execute("""
-        SELECT student_id, first_name, last_name, email, phone, date_of_birth
+        SELECT
+            student_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth
         FROM students
-        WHERE student_id=%s;
+        WHERE student_id = %s;
     """, (sid,))
     student = cur.fetchone()
 
-    # If the student does not exist, return to the student list
+    # If the student does not exist, return to student list
     if not student:
         cur.close()
         return redirect(url_for('student_list'))
 
-    # Retrieve all classes the student is enrolled in
-    # A single JOIN query is used for efficiency
-    # If the student has no enrolled classes, an empty list will be returned
+    # --------------------------------------------------
+    # 2) Retrieve all classes the student is enrolled in
+    #    Listing requirements match the Class List:
+    #    - grouped by Dance Type
+    #    - ordered by grade level (NULL grades last)
+    #    - then by class name
+    # --------------------------------------------------
     cur.execute("""
-    SELECT
-        c.class_id,
-        c.class_name,
-        c.teacher_id,
-        c.schedule_day,
-        c.schedule_time
-    FROM studentclasses sc
-    JOIN classes c ON c.class_id = sc.class_id
-    WHERE sc.student_id=%s
-    ORDER BY c.class_name;
-     """, (sid,))
+        SELECT
+            c.class_id AS class_id,
+            c.class_name AS class_name,
+            c.schedule_day AS schedule_day,
+            c.schedule_time AS schedule_time,
+            dt.dancetype_name AS dance_type,
+            g.grade_level AS grade_level,
+            g.grade_name AS grade_name
+        FROM studentclasses sc
+        JOIN classes c ON c.class_id = sc.class_id
+        JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
+        LEFT JOIN grades g ON c.grade_id = g.grade_id
+        WHERE sc.student_id = %s
+        ORDER BY
+            dt.dancetype_name,
+            (g.grade_level IS NULL),
+            g.grade_level,
+            c.class_name;
+    """, (sid,))
     classes = cur.fetchall()
-
     cur.close()
 
-    return render_template(
-        "student_class_summary.html",
-        student=student,
-        classes=classes
-    )
+    # 3) Handle case where student has no enrolled classes
+ 
+    if not classes:
+        flash("This student is not enrolled in any classes.", "warning")
+  
+    return render_template("student_class_summary.html",student=student,classes=classes)
 
   
-    
+  
     
 
 @app.route('/student/enrol', methods=['GET', 'POST'])
@@ -242,6 +281,7 @@ def student_enrol():
         class_id = request.form.get('class_id')
 
         if not sid or not class_id:
+            flash('Please select a student and a class.')
             return redirect(url_for('student_list'))
 
         cur = db.get_cursor()

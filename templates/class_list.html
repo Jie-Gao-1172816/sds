@@ -4,62 +4,106 @@
 
 {% block content %}
 
+<!-- Page heading -->
 <h2>Classes</h2>
 
-<table class="table table-striped table-bordered">
+<!-- Class List Table
+     Shows all classes and the students enrolled in each class-->
+<table class="table table-borderless table-hover align-middle">
+
+  <!-- Table header -->
   <thead class="table-dark">
     <tr>
       <th>Class ID</th>
       <th>Class Name</th>
       <th>Dance Type</th>
       <th>Grade</th>
+      <th>Day</th>
+      <th>Time</th>
       <th>Enrolled Student<br>First Name</th>
       <th>Enrolled Student<br>Last Name</th>
-
     </tr>
   </thead>
 
-  <tbody>
-    {% set ns = namespace(prev_class_id=None) %}
 
-  {% for row in classes %}
-<tr>
-  {% if row['class_id'] != ns.prev_class_id %}
-    <td>{{ row['class_id'] }}</td>
-    <td class="fw-semibold"><strong>{{ row['class_name'] }}</strong></td>
-    <td>{{ row['dance_type'] }}</td>
-    <td>{{ row['grade_name'] }}</td>
-    {% set ns.prev_class_id = row['class_id'] %}
-  {% else %}
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+  <tbody>
+
+  <!-- Namespace variables:
+       prev_class_id : track class grouping
+       row_style     : track current Bootstrap row colour -->
+  {% set ns = namespace(prev_class_id=None, row_style='table-light') %}
+
+  <!-- Loop through each row returned from the database -->
+  {% for class_row in classes %}
+  
+  <!-- Switch colour when a new class starts -->
+  {% if class_row['class_id'] != ns.prev_class_id %}
+    {% set ns.row_style = 'table-secondary' if ns.row_style == 'table-light' else 'table-light' %}
   {% endif %}
 
+  <tr class="{{ ns.row_style }}">
+
+    <!-- Only display class details when the class_id changes -->
+    {% if class_row['class_id'] != ns.prev_class_id %}
+      <td>{{ class_row['class_id'] }}</td>
+
+      <td class="fw-semibold">
+        {{ class_row['class_name'] }}
+      </td>
+
+      <td>{{ class_row['dance_type'] }}</td>
 
       <td>
-        {% if row['first_name'] %}
-          <a href="{{ url_for('student_class_summary', student_id=row['student_id']) }}">
-            {{ row['first_name'] }}
-          </a>
+        {% if class_row['grade_name'] %}
+          {{ class_row['grade_name'] }}
         {% else %}
-          No student enrolled
+          <span class="text-muted">No grade</span>
         {% endif %}
       </td>
+
+      <td>{{ class_row['schedule_day'] }}</td>
+      <td>{{ class_row['schedule_time'] }}</td>
+
+      <!-- Update previous class_id -->
+      {% set ns.prev_class_id = class_row['class_id'] %}
+
+    {% else %}
+      <!-- Leave class columns empty for additional students -->
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    {% endif %}
+
+
+      <!-- Student first name (clickable to class summary) -->
       <td>
-        {% if row['last_name'] %}
-          <a href="{{ url_for('student_class_summary', student_id=row['student_id']) }}">
-            {{ row['last_name'] }}
+        {% if class_row['first_name'] %}
+          <a href="{{ url_for('student_class_summary', student_id=class_row['student_id']) }}" class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold">
+            {{ class_row['first_name'] }}
           </a>
         {% else %}
           No student enrolled
         {% endif %}
       </td>
+
+      <!-- Student last name (clickable to class summary) -->
+      <td>
+        {% if class_row['last_name'] %}
+          <a href="{{ url_for('student_class_summary', student_id=class_row['student_id']) }}" class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold">
+            {{ class_row['last_name'] }}
+          </a>
+        {% else %}
+          No student enrolled
+        {% endif %}
+      </td>
+
     </tr>
-  {% endfor %}
+    {% endfor %}
+
   </tbody>
 </table>
 
 {% endblock %}
-

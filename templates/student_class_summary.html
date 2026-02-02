@@ -1,63 +1,115 @@
 {% extends "base.html" %}
 
+{% block title %}Student Class Summary - SDS{% endblock %}
+
 {% block content %}
 
-<h2>Student Class Summary</h2>
-
+<!-- Page Title-->
 <div class="mb-3">
-  <strong>Student:</strong>
-  {{ student.last_name }}, {{ student.first_name }}
-  <span class="text-muted">
-    (ID: {{ student.student_id }})
-  </span>
+  <h2 class="mb-1">Student Class Summary</h2>
+  
 </div>
 
+<!-- =========================
+     Student Information Card
+     ========================= -->
+
+
+    <!-- Student full name (main focus) -->
+    <div class="fw-semibold fs-5 mb-2">
+      {{ student['last_name'] }}, {{ student['first_name'] }}
+    </div>
+
+    <!-- Student details (stacked neatly under name) -->
+    <div class="text-muted small">
+
+      <!-- Student ID -->
+      <div>
+        Student ID: {{ student['student_id'] }}
+      </div>
+
+      <!-- Student email (only shown if exists) -->
+      {% if student['email'] %}
+      <div>
+        Email: {{ student['email'] }}
+      </div>
+      {% endif %}
+
+      <!-- Student phone (only shown if exists) -->
+      {% if student['phone'] %}
+      <div>
+        Phone: {{ student['phone'] }}
+      </div>
+      {% endif %}
+
+    </div>
+
+ 
+
+
+
+<!-- =========================
+     Class List Table
+     ========================= -->
 {% if classes and classes|length > 0 %}
 
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Class ID</th>
-      <th>Class Name</th>
-      <th>Teacher</th>
-      <th>Day</th>
-      <th>Time</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for c in classes %}
-    <tr>
-      <td>{{ c.class_id }}</td>
-      <td>{{ c.class_name }}</td>
-      <td>{{ c.teacher_id }}</td>
-      <td>{{ c.schedule_day }}</td>
-      <td>{{ c.schedule_time }}</td>
+<div class="table-responsive">
+  <table class="table  table-hover table-borderless align-middle">
+    <thead class="table-secondary">
+      <tr>
+        <th style="width: 90px;">Class ID</th>
+        <th>Class Name</th>
+        <th style="width: 160px;">Dance Type</th>
+        <th style="width: 150px;">Grade</th>
+        <th style="width: 120px;">Day</th>
+        <th style="width: 120px;">Time</th>
+      </tr>
+    </thead>
 
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <tbody>
+      {% for class_row in classes %}
+      <tr>
+        <td>{{ class_row['class_id'] }}</td>
 
-{% else %}
+        <td class="fw-semibold">
+          {{ class_row['class_name'] }}
+        </td>
 
-<div class="alert alert-warning">
-  This student is not enrolled in any classes.
+        <td>
+          {{ class_row['dance_type'] }}
+        </td>
+
+        <td>
+          {% if class_row['grade_name'] %}
+            {{ class_row['grade_name'] }}
+           
+          {% else %}
+            <span class="text-muted">No grade</span>
+          {% endif %}
+        </td>
+        <td>{{ class_row['schedule_day'] }}</td>
+        <td>{{ class_row['schedule_time'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
+
 
 {% endif %}
 
-<div class="mt-4">
-  <a class="btn btn-secondary" href="{{ url_for('student_list') }}">
+<!-- =========================
+     Action buttons
+     ========================= -->
+<div class="d-flex gap-2 mt-4">
+  <a href="{{ url_for('student_list') }}" class="btn btn-outline-dark">
     Back to Student List
   </a>
 
-  {#  New Enrolment  #}
-  
-  <a class="btn btn-primary"
-     href="{{ url_for('student_enrol', student_id=student.student_id) }}">
+  <a href="{{ url_for('student_enrol', student_id=student['student_id']) }}"
+     class="btn btn-dark">
     Enrol in a Class
   </a>
-  
 </div>
 
 {% endblock %}

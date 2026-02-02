@@ -4,16 +4,16 @@
 
 {% block content %}
 
-<h2>Services</h2>
+<h2>Teacher List</h2>
 
-<p class="text-success"><strong>If you can see this page in PythonAnywhere, then your database and connect.py 
-    are correctly configured.</strong>  </p>
 
-<table class="table">
-    <tr>
+
+<table class="table  table-striped table-borderless table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
         <th>Teacher ID</th>
         <th>Name</th>
-    </tr>
+      </tr>
     {% for teacher in teachers %}
     <tr>
         <td>{{ teacher.teacher_id }}</td>
