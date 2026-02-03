@@ -7,14 +7,12 @@
 <!-- Page heading -->
 <h2>Classes</h2>
 
-<!-- Class List Table
-     Shows all classes and the students enrolled in each class-->
+<!-- Class List Table  Shows all classes and the students enrolled in each class-->
 <table class="table table-borderless table-hover align-middle">
 
   <!-- Table header -->
   <thead class="table-dark">
     <tr>
-      <th>Class ID</th>
       <th>Class Name</th>
       <th>Dance Type</th>
       <th>Grade</th>
@@ -45,7 +43,6 @@
 
     <!-- Only display class details when the class_id changes -->
     {% if class_row['class_id'] != ns.prev_class_id %}
-      <td>{{ class_row['class_id'] }}</td>
 
       <td class="fw-semibold">
         {{ class_row['class_name'] }}
@@ -69,7 +66,6 @@
 
     {% else %}
       <!-- Leave class columns empty for additional students -->
-      <td></td>
       <td></td>
       <td></td>
       <td></td>

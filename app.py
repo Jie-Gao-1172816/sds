@@ -15,102 +15,303 @@ app.secret_key = 'sds_secret_2025'  # Set a secret key for session/flash
 
 # Initialize database connection
 db.init_db(
-    app, connect.dbuser, connect.dbpass, connect.dbhost, connect.dbname, connect.dbport
-)
+    app, connect.dbuser, connect.dbpass, connect.dbhost, connect.dbname, connect.dbport)
 
+
+# ==============================
+# Form Validation 
+# ==============================
+
+# Helper function to get DOB limits
+from datetime import date
+
+def get_dob_limits():
+    """
+    DOB limits for HTML date picker.
+    - min: today - 20 years
+    - max: today - 1 year  (student must be at least 1 year old)
+    Returns (dob_min, dob_max) as ISO strings.
+    """
+    today = date.today()
+
+    # min_dob: today - 20 years
+    try:
+        min_dob = date(today.year - 20, today.month, today.day)
+    except ValueError:
+        min_dob = date(today.year - 20, today.month, 28)
+
+    # max_dob: today - 1 year
+    try:
+        max_dob = date(today.year - 1, today.month, today.day)
+    except ValueError:
+        max_dob = date(today.year - 1, today.month, 28)
+
+    return min_dob.isoformat(), max_dob.isoformat()
+
+def validate_student_form(form):
+    """
+    Validation shared by Add + Edit.
+    Returns (clean_data, errors)
+
+    Rules :
+    - first_name / last_name: required; min length 2; letters only (spaces, hyphen, apostrophe allowed); max length 50
+    - email: optional; basic format check (no regex)
+    - phone: must contain at least 6 digits if provided
+    - date_of_birth: REQUIRED; must be valid date; sensible range (today-20 years to today)
+    - enrollment_date: defaults to today; if provided, cannot be future
+    """
+    errors = []
+
+    # Names (required, clearer messages, no regex)
+    first_name = (form.get('first_name') or '').strip()
+    last_name  = (form.get('last_name') or '').strip()
+
+    def validate_name(value: str, label: str):
+        """Basic name rules without regex."""
+        if not value:
+            errors.append(f"{label} is required.")
+            return
+
+        # Minimum length (teacher example: 'B' is not OK)
+        if len(value) < 2:
+            errors.append(f"{label} must be at least 2 characters.")
+            return
+
+        if len(value) > 50:
+            errors.append(f"{label} must be 50 characters or fewer.")
+            return
+
+        if any(ch.isdigit() for ch in value):
+            errors.append(f"{label} cannot contain numbers.")
+            return
+
+        # Allow letters plus space, hyphen, apostrophe
+        allowed_extra = set(" -'")
+        for ch in value:
+            if ch.isalpha() or ch in allowed_extra:
+                continue
+            errors.append(f"{label} can only contain letters, spaces, hyphens, or apostrophes.")
+            return
+
+    validate_name(first_name, "First name")
+    validate_name(last_name, "Last name")
+
+    # Email (optional, no regex, clearer reasons)
+    email = (form.get('email') or '').strip()
+    if email:
+        if email.count("@") != 1:
+            errors.append("Email must contain one '@'.")
+        else:
+            local, domain = email.split("@")
+            if not local:
+                errors.append("Email is missing the part before '@'.")
+            elif not domain:
+                errors.append("Email is missing the domain after '@'.")
+            elif domain.startswith(".") or domain.endswith("."):
+                errors.append("Email domain cannot start or end with a dot '.'.")
+            elif "." not in domain:
+                errors.append("Email domain must contain a dot (e.g., example.com).")
+
+    # Phone (simple digit count rule)
+    phone = (form.get('phone') or '').strip()
+    if phone:
+        digits_only = "".join(ch for ch in phone if ch.isdigit())
+        if len(digits_only) < 6:
+            errors.append("Phone must contain at least 6 digits.")
+
+    # Date of Birth (REQUIRED; sensible range)
+    dob_raw = (form.get('date_of_birth') or '').strip()
+    dob = None
+
+    if not dob_raw:
+        errors.append("Date of birth is required.")
+    else:
+        try:
+            dob = datetime.strptime(dob_raw, "%Y-%m-%d").date()
+        except ValueError:
+            errors.append("Date of birth must be in YYYY-MM-DD format.")
+        else:
+            today = date.today()
+
+            # Sensible range assumption for assignment
+            # minimum: today minus 20 years; maximum: 1 years  old
+            try:
+                min_dob = date(today.year - 20, today.month, today.day)
+            except ValueError:
+                # Handle leap day edge case (Feb 29)
+                min_dob = date(today.year - 20, today.month, 28)
+            
+            try:
+                max_dob = date(today.year - 1, today.month, today.day)
+            except ValueError:
+                # Handle leap day edge case (Feb 29)
+                max_dob = date(today.year - 1, today.month, 28)
+
+
+            if dob > max_dob:
+                errors.append("Student must be at least 1 year old.")
+            elif dob < min_dob:
+                errors.append("Date of birth must be within the last 20 years.")
+                
+
+    # Enrollment Date (default today, cannot be future)
+    enrollment_date_raw = (form.get('enrollment_date') or '').strip()
+    if enrollment_date_raw:
+        try:
+            ed = datetime.strptime(enrollment_date_raw, "%Y-%m-%d").date()
+        except ValueError:
+            errors.append("Enrollment date must be in YYYY-MM-DD format.")
+            enrollment_date = None
+        else:
+            if ed > date.today():
+                errors.append("Enrollment date cannot be in the future.")
+                enrollment_date = None
+            else:
+                enrollment_date = ed.isoformat()
+    else:
+        enrollment_date = date.today().isoformat()
+
+    clean = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email or None,
+        "phone": phone or None,
+        "date_of_birth": dob.isoformat() if dob else None,
+        "enrollment_date": enrollment_date
+    }
+
+    return clean, errors
+
+
+
+
+
+
+# ==============================
+# Home Page
+# ==============================
 
 @app.route("/")
 def home():
+    """Display home page"""
     return render_template("home.html")
 
 
+# ==============================
+# Teacher List
+# ==============================
+
 @app.route("/teachers", methods=["GET"])
 def teacher_list():
+    """Display list of all teachers"""
     cursor = db.get_cursor()
-    # List all teachers        
-    querystr = "SELECT teacher_id, first_name, last_name FROM teachers;" 
-    cursor.execute(querystr)        
+
+    # Retrieve basic teacher information
+    querystr = """
+        SELECT teacher_id, first_name, last_name, email, phone
+        FROM teachers;
+    """
+    cursor.execute(querystr)
     teachers = cursor.fetchall()
     cursor.close()
-    if True:  # Example condition for a flash message
-        flash("Example of a flash message. Optional, but good for error or confirmation " \
-            "messages when used with an IF statement.", "info")
+
     return render_template("teacher_list.html", teachers=teachers)
 
 
+# ==============================
+# Student List + Search
+# ==============================
+
 @app.route("/students")
 def student_list():
+    """
+    Display student list.
+    Supports optional name search using query parameter `q`.
+    """
     cursor = db.get_cursor()
 
     # Get search term (trim whitespace)
     q = request.args.get("q", "").strip()
 
-    # Base query (used for both list and search)
+    # Base query for student listing
     base_query = """
         SELECT DISTINCT
-            s.student_id, s.first_name, s.last_name,s.email,
-            s.date_of_birth, s.phone, s.enrollment_date
+            s.student_id,
+            s.first_name,
+            s.last_name,
+            s.email,
+            s.date_of_birth,
+            s.phone,
+            s.enrollment_date
         FROM students s
-      
     """
 
-    # If the user clicked "Search" but submitted an empty query,
-    # show an info message and fall back to displaying all students.
+    # User clicked search with empty input
     if "q" in request.args and q == "":
         flash("No search term entered. Showing all students.", "info")
 
-    # If there is a non-empty search term, filter by first/last name (partial match)
+    # Apply search filter if provided
     if q != "":
         query = base_query + """
             WHERE s.first_name LIKE %s OR s.last_name LIKE %s
-            ORDER BY s.last_name, s.first_name
+            ORDER BY s.last_name, s.first_name;
         """
         cursor.execute(query, (f"%{q}%", f"%{q}%"))
     else:
-        # Otherwise, show all students (alphabetical order)
-    
+        # Default: show all students alphabetically
         query = base_query + """
-            ORDER BY s.last_name, s.first_name
+            ORDER BY s.last_name, s.first_name;
         """
         cursor.execute(query)
 
     students = cursor.fetchall()
-    # If a search was performed but no results found, show a warning message
-    if q and len(students) == 0:
-       flash("No students matched your search.", "warning")
-    cursor.close()
 
+    # Search performed but no results found
+    if q and len(students) == 0:
+        flash("No students matched your search.", "warning")
+
+    cursor.close()
     return render_template("student_list.html", students=students)
 
 
+# ==============================
+# Class List
+# ==============================
+
 @app.route("/classes")
 def class_list():
-    cursor = db.get_cursor()
-
-    # Query to display:
-    # - all classes (even if no students enrolled)
-    # - shown by Dance Type and in grade order， considering NULL grades as lowest
-    # - and any enrolled students listed under each class
-    query = """
-    SELECT
-        c.class_id AS class_id,
-        c.class_name AS class_name,
-        c.schedule_day AS schedule_day,
-        c.schedule_time AS schedule_time,
-        dt.dancetype_name AS dance_type,
-        g.grade_level AS grade_level,
-        g.grade_name AS grade_name,
-        s.student_id AS student_id,
-        s.first_name AS first_name,
-        s.last_name AS last_name
-    FROM classes c
-    JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
-    LEFT JOIN grades g ON c.grade_id = g.grade_id
-    LEFT JOIN studentclasses sc ON c.class_id = sc.class_id
-    LEFT JOIN students s ON sc.student_id = s.student_id
-    ORDER BY dt.dancetype_name,  (g.grade_level IS NULL), g.grade_level, c.class_name, s.last_name, s.first_name;
     """
- 
+    Display all classes and enrolled students.
+    Classes are ordered by dance type and grade level.
+    """
+    cursor = db.get_cursor()
+    # Retrieve class and student information
+    query = """
+        SELECT
+            c.class_id,
+            c.class_name,
+            c.schedule_day,
+            c.schedule_time,
+            dt.dancetype_name,
+            g.grade_level,
+            g.grade_name,
+            s.student_id,
+            s.first_name,
+            s.last_name
+        FROM classes c
+        JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
+        LEFT JOIN grades g ON c.grade_id = g.grade_id
+        LEFT JOIN studentclasses sc ON c.class_id = sc.class_id
+        LEFT JOIN students s ON sc.student_id = s.student_id
+        ORDER BY
+            dt.dancetype_name,
+            (g.grade_level IS NULL),
+            g.grade_level,
+            c.class_name,
+            s.last_name,
+            s.first_name;
+    """
+
     cursor.execute(query)
     classes = cursor.fetchall()
     cursor.close()
@@ -120,88 +321,306 @@ def class_list():
 
 
 
+# ==============================
+#    Edit Student
+# ==============================
 
-# edit student
+
 @app.route('/student/edit', methods=['GET', 'POST'])
 def edit_student():
+    
+    today = date.today().isoformat()
+    dob_min, dob_max = get_dob_limits()
+
+    # ---------- POST: update ----------
     if request.method == 'POST':
-        # ===== UPDATE (edit existing student) =====
         sid = request.form.get('student_id')
 
-        first_name = request.form.get('first_name')
-        last_name  = request.form.get('last_name')
-        email      = request.form.get('email') or None
-        phone      = request.form.get('phone') or None
-        dob        = request.form.get('date_of_birth') or None
+        # Validate form input
+        clean, errors = validate_student_form(request.form)
+
+        # If there are validation errors, re-render the form (do NOT redirect),
+        # so the user's correct inputs are preserved.
+        if errors:
+            for e in errors:
+                flash(e, "danger")
+
+            cur = db.get_cursor()
+
+            # Dropdown data
+            cur.execute("""
+                SELECT grade_id, grade_name, grade_level
+                FROM grades
+                ORDER BY grade_level, grade_name;
+            """)
+            grades = cur.fetchall()
+
+            cur.execute("""
+                SELECT dancetype_id, dancetype_name
+                FROM dancetype
+                ORDER BY dancetype_name;
+            """)
+            dancetypes = cur.fetchall()
+
+            # Rebuild student_grades from submitted form (preserve selections)
+            student_grades = {}
+            for dt in dancetypes:
+                raw = (request.form.get(f"grade_{dt['dancetype_id']}") or "").strip()
+                if raw.isdigit():
+                    student_grades[dt['dancetype_id']] = int(raw)
+
+            cur.close()
+
+            # Preserve user-entered values in the form
+            # enrollment_date is read-only in Edit, but we keep it for display.
+            student = {"student_id": sid, "enrollment_date": request.form.get("enrollment_date")}
+            student.update(clean)
+
+            return render_template(
+                'student_edit.html',
+                edit=True,
+                student=student,
+                today=today,
+                dob_min=dob_min,
+                dob_max=dob_max,
+                grades=grades,
+                dancetypes=dancetypes,
+                student_grades=student_grades
+            )
 
         cur = db.get_cursor()
+
+        # Edit cannot change enrollment_date (date joined)
         cur.execute("""
             UPDATE students
             SET first_name=%s, last_name=%s, email=%s, phone=%s, date_of_birth=%s
             WHERE student_id=%s;
-        """, (first_name, last_name, email, phone, dob, sid))
-        cur.close()
+        """, (
+            clean["first_name"], clean["last_name"], clean["email"],
+            clean["phone"], clean["date_of_birth"], sid
+        ))
 
+        # Replace grades (simple approach: delete then insert)
+        cur.execute("DELETE FROM studentgrades WHERE student_id=%s;", (sid,))
+
+        cur.execute("SELECT dancetype_id FROM dancetype;")
+        dt_ids = [r["dancetype_id"] for r in cur.fetchall()]
+
+        for dtid in dt_ids:
+            raw = (request.form.get(f"grade_{dtid}") or "").strip()
+            if raw == "":
+                continue
+            try:
+                gid = int(raw)
+            except ValueError:
+                continue
+
+            cur.execute("""
+                INSERT INTO studentgrades (student_id, dancetype_id, grade_id)
+                VALUES (%s, %s, %s);
+            """, (sid, dtid, gid))
+
+        cur.close()
+        flash("Student updated successfully.", "success")
         return redirect(url_for('student_list'))
 
-    # ===== GET: show form =====
+    # ---------- GET: show form ----------
     sid = request.args.get('student_id')
-
-    if sid is None:
-        # Add page (blank)
-        return render_template(
-            'student_edit.html',
-            edit=False,
-            student={'enrollment_date': date.today().isoformat()},
-            today=date.today().isoformat()
-        )
-    else:
-        # Edit page (load from DB)
-        cur = db.get_cursor()
-        cur.execute("""
-            SELECT student_id, first_name, last_name, email, phone, date_of_birth, enrollment_date
-            FROM students
-            WHERE student_id=%s;
-        """, (sid,))
-        student = cur.fetchone()
-        cur.close()
-
-        return render_template(
-            'student_edit.html',
-            edit=True,
-            student=student,
-            today=date.today().isoformat()
-        )
-
-
-# POST only: INSERT (add new student)
-@app.route('/student/add', methods=['POST'])
-def add_student():
-    first_name = request.form.get('first_name')
-    last_name  = request.form.get('last_name')
-    email      = request.form.get('email') or None
-    phone      = request.form.get('phone') or None
-    dob        = request.form.get('date_of_birth') or None
-
-    # enrollment_date: if blank, set to today (先简单)
-    enrollment_date = request.form.get('enrollment_date') or date.today().isoformat()
+    if not sid:
+        return redirect(url_for('student_list'))
 
     cur = db.get_cursor()
+
+    # Load student details
     cur.execute("""
-        INSERT INTO students (first_name, last_name, email, phone, date_of_birth, enrollment_date)
-        VALUES (%s,%s,%s,%s,%s,%s);
-    """, (first_name, last_name, email, phone, dob, enrollment_date))
+        SELECT student_id, first_name, last_name, email, phone, date_of_birth, enrollment_date
+        FROM students
+        WHERE student_id=%s;
+    """, (sid,))
+    student = cur.fetchone()
+
+    # Dropdown options
+    cur.execute("""
+        SELECT grade_id, grade_name, grade_level
+        FROM grades
+        ORDER BY grade_level, grade_name;
+    """)
+    grades = cur.fetchall()
+
+    cur.execute("""
+        SELECT dancetype_id, dancetype_name
+        FROM dancetype
+        ORDER BY dancetype_name;
+    """)
+    dancetypes = cur.fetchall()
+
+    # Current grade selections for this student
+    cur.execute("""
+        SELECT dancetype_id, grade_id
+        FROM studentgrades
+        WHERE student_id=%s;
+    """, (sid,))
+    student_grades = {r["dancetype_id"]: r["grade_id"] for r in cur.fetchall()}
+
     cur.close()
 
-    return redirect(url_for('student_list'))
+    return render_template(
+        'student_edit.html',
+        edit=True,
+        student=student,
+        today=today,
+        dob_min=dob_min,
+        dob_max=dob_max,
+        grades=grades,
+        dancetypes=dancetypes,
+        student_grades=student_grades)
 
 
 
 
+
+# ==============================
+# Add New Student 
+# ==============================
+
+@app.route('/student/add', methods=['GET', 'POST'])
+def add_student():
+   
+    today = date.today().isoformat()
+    dob_min, dob_max = get_dob_limits()
+
+    # ---------- POST: insert ----------
+    if request.method == 'POST':
+        clean, errors = validate_student_form(request.form)
+
+        # If there are validation errors, re-render the form (do NOT redirect),
+        # so the user's correct inputs are preserved.
+        if errors:
+            for e in errors:
+                flash(e, "danger")
+
+            cur = db.get_cursor()
+
+            cur.execute("""
+                SELECT grade_id, grade_name, grade_level
+                FROM grades
+                ORDER BY grade_level, grade_name;
+            """)
+            grades = cur.fetchall()
+
+            cur.execute("""
+                SELECT dancetype_id, dancetype_name
+                FROM dancetype
+                ORDER BY dancetype_name;
+            """)
+            dancetypes = cur.fetchall()
+
+            # Preserve grade selections from submitted form
+            student_grades = {}
+            for dt in dancetypes:
+                raw = (request.form.get(f"grade_{dt['dancetype_id']}") or "").strip()
+                if raw.isdigit():
+                    student_grades[dt['dancetype_id']] = int(raw)
+
+            cur.close()
+
+            # Preserve user-entered values
+            student = {}
+            student.update(clean)
+
+            return render_template(
+                'student_edit.html',
+                edit=False,
+                student=student,
+                today=today,
+                dob_min=dob_min,
+                dob_max=dob_max,
+                grades=grades,
+                dancetypes=dancetypes,
+                student_grades=student_grades
+            )
+
+        cur = db.get_cursor()
+
+        # Insert new student (student_id is auto generated by DB)
+        cur.execute("""
+            INSERT INTO students (first_name, last_name, email, phone, date_of_birth, enrollment_date)
+            VALUES (%s, %s, %s, %s, %s, %s);
+        """, (
+            clean["first_name"], clean["last_name"], clean["email"],
+            clean["phone"], clean["date_of_birth"], clean["enrollment_date"]
+        ))
+        new_sid = cur.lastrowid
+
+        # Insert any selected grades
+        cur.execute("SELECT dancetype_id FROM dancetype;")
+        dt_ids = [r["dancetype_id"] for r in cur.fetchall()]
+
+        for dtid in dt_ids:
+            raw = (request.form.get(f"grade_{dtid}") or "").strip()
+            if raw == "":
+                continue
+            try:
+                gid = int(raw)
+            except ValueError:
+                continue
+
+            cur.execute("""
+                INSERT INTO studentgrades (student_id, dancetype_id, grade_id)
+                VALUES (%s, %s, %s);
+            """, (new_sid, dtid, gid))
+
+        cur.close()
+        flash("Student added successfully.", "success")
+        return redirect(url_for('student_list'))
+
+    # ---------- GET: show form ----------
+    cur = db.get_cursor()
+
+    cur.execute("""
+        SELECT grade_id, grade_name, grade_level
+        FROM grades
+        ORDER BY grade_level, grade_name;
+    """)
+    grades = cur.fetchall()
+
+    cur.execute("""
+        SELECT dancetype_id, dancetype_name
+        FROM dancetype
+        ORDER BY dancetype_name;
+    """)
+    dancetypes = cur.fetchall()
+
+    cur.close()
+
+    return render_template(
+        'student_edit.html',
+        edit=False,
+        student={},
+        today=today,
+        dob_min=dob_min,
+        dob_max=dob_max,
+        grades=grades,
+        dancetypes=dancetypes,
+        student_grades={})
+
+
+
+
+
+
+
+# ==============================
 # Student Class Summary
+# ==============================
+
 @app.route('/student/class-summary')
 def student_class_summary():
+    """
+    Display a summary of classes for a selected student.
+    """
 
+    # Step 1: Get student ID from query string
     sid = request.args.get('student_id')
     if not sid:
         return redirect(url_for('student_list'))
@@ -209,9 +628,8 @@ def student_class_summary():
     cur = db.get_cursor()
 
     # --------------------------------------------------
-    # 1) Retrieve basic student information
-    #    This confirms the student exists and provides
-    #    data for the page heading.
+    # Step 2: Retrieve basic student information
+    # Used for page heading and validation
     # --------------------------------------------------
     cur.execute("""
         SELECT
@@ -226,27 +644,27 @@ def student_class_summary():
     """, (sid,))
     student = cur.fetchone()
 
-    # If the student does not exist, return to student list
+    # If student does not exist, return to list
     if not student:
         cur.close()
         return redirect(url_for('student_list'))
 
     # --------------------------------------------------
-    # 2) Retrieve all classes the student is enrolled in
-    #    Listing requirements match the Class List:
-    #    - grouped by Dance Type
-    #    - ordered by grade level (NULL grades last)
-    #    - then by class name
+    # Step 3: Retrieve classes the student is enrolled in
+    # Ordering:
+    # - Dance type
+    # - Grade level (NULL last)
+    # - Class name
     # --------------------------------------------------
     cur.execute("""
         SELECT
-            c.class_id AS class_id,
-            c.class_name AS class_name,
-            c.schedule_day AS schedule_day,
-            c.schedule_time AS schedule_time,
-            dt.dancetype_name AS dance_type,
-            g.grade_level AS grade_level,
-            g.grade_name AS grade_name
+            c.class_id,
+            c.class_name,
+            c.schedule_day,
+            c.schedule_time,
+            dt.dancetype_name,
+            g.grade_level,
+            g.grade_name
         FROM studentclasses sc
         JOIN classes c ON c.class_id = sc.class_id
         JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
@@ -261,56 +679,65 @@ def student_class_summary():
     classes = cur.fetchall()
     cur.close()
 
-    # 3) Handle case where student has no enrolled classes
- 
+    # Step 4: Handle case where student has no classes
     if not classes:
         flash("This student is not enrolled in any classes.", "warning")
-  
-    return render_template("student_class_summary.html",student=student,classes=classes)
+
+    return render_template(
+        "student_class_summary.html",
+        student=student,
+        classes=classes)
 
   
   
     
 
+# ==============================
+# Student Enrolment
+# ==============================
+
 @app.route('/student/enrol', methods=['GET', 'POST'])
 def student_enrol():
+    """
+    GET  : Display enrolment form
+    POST : Save student enrolment
+    """
 
-    # ===== POST: save enrolment =====
+    # ----- POST: Save enrolment -----
     if request.method == 'POST':
         sid = request.form.get('student_id')
         class_id = request.form.get('class_id')
 
+        # Basic validation
         if not sid or not class_id:
             flash('Please select a student and a class.')
             return redirect(url_for('student_list'))
 
         cur = db.get_cursor()
 
-        # Insert enrolment (studentclasses has a UNIQUE (student_id, class_id) constraint)
-        # so duplicates are prevented at the database level as well.
+        # Insert enrolment
+        # UNIQUE constraint on (student_id, class_id) prevents duplicates
         try:
             cur.execute("""
                 INSERT INTO studentclasses (student_id, class_id)
                 VALUES (%s, %s);
             """, (sid, class_id))
-            # Commit here if your connection is not autocommit
-            # db.connection.commit()
         except Exception:
-            # If a duplicate is attempted, the UNIQUE constraint will raise an error.
-            # We can safely ignore and redirect back.
-            pass
+            # Duplicate enrolment (or other DB error)
+            # Do not crash; show a message and continue
+            flash('This student is already enrolled in that class.')
 
         cur.close()
         return redirect(url_for('student_class_summary', student_id=sid))
 
-    # ===== GET: display enrolment form =====
+    # ----- GET: Display enrolment form -----
     sid = request.args.get('student_id')
     if not sid:
         return redirect(url_for('student_list'))
 
     cur = db.get_cursor()
 
-    # Retrieve student basic info (for page heading)
+    # Step 1: Retrieve student basic info
     cur.execute("""
         SELECT student_id, first_name, last_name
         FROM students
@@ -322,10 +749,15 @@ def student_enrol():
         cur.close()
         return redirect(url_for('student_list'))
 
-    # Retrieve eligible classes:
-    # - Student must be qualified in the same dance type at the class grade level
-    #   OR one grade level above
-    # - Exclude classes the student is already enrolled in
+    # Step 2: Retrieve eligible classes
+    # Rules:
+    # - Same dance type
+    # - Current grade level OR one level above
+    # - Exclude already enrolled classes
+    #
+    # Note:
+    # studentgrades may contain multiple grade records per dance type,
+    # so we treat the CURRENT grade as the highest grade_level per dance type.
     cur.execute("""
         SELECT
             c.class_id,
@@ -337,41 +769,64 @@ def student_enrol():
             c.schedule_time
         FROM classes c
         JOIN dancetype dt ON c.dancetype_id = dt.dancetype_id
-        LEFT JOIN grades g ON c.grade_id = g.grade_id
-        WHERE
-          EXISTS (
-            SELECT 1
+        JOIN grades g ON c.grade_id = g.grade_id
+
+        -- Student's current grade per dance type (highest grade_level)
+        JOIN (
+            SELECT
+                sg.dancetype_id,
+                MAX(gr2.grade_level) AS cur_level
             FROM studentgrades sg
-            JOIN grades gg ON sg.grade_id = gg.grade_id
-            JOIN grades cg ON c.grade_id = cg.grade_id
+            JOIN grades gr2 ON sg.grade_id = gr2.grade_id
             WHERE sg.student_id = %s
-              AND sg.dancetype_id = c.dancetype_id
-              AND cg.grade_level IN (gg.grade_level, gg.grade_level + 1)
-          )
-          AND NOT EXISTS (
-            SELECT 1
-            FROM studentclasses sc
-            WHERE sc.student_id = %s AND sc.class_id = c.class_id
-          )
+            GROUP BY sg.dancetype_id
+        ) sgl
+          ON sgl.dancetype_id = c.dancetype_id
+
+        -- Exclude already enrolled classes
+        LEFT JOIN studentclasses sc
+          ON sc.student_id = %s
+         AND sc.class_id = c.class_id
+
+        WHERE sc.class_id IS NULL
+          AND g.grade_level BETWEEN sgl.cur_level AND (sgl.cur_level + 1)
+
         ORDER BY dt.dancetype_name, g.grade_level, c.class_name;
     """, (sid, sid))
     eligible_classes = cur.fetchall()
+    print("DEBUG eligible_classes:", eligible_classes, flush=True)
+
 
     cur.close()
 
     return render_template(
         'student_enrol.html',
         student=student,
-        eligible_classes=eligible_classes
-    )
+        eligible_classes=eligible_classes)
 
 
+
+
+
+# ==============================
+# Teacher Report
+# ==============================
 
 @app.route('/teachers/report')
 def teacher_report():
+    """
+    Display teacher report showing:
+    - Classes taught by each teacher
+    - Student count per class
+    - Total unique students per teacher
+    """
+
     cur = db.get_cursor()
 
-    # Teachers -> Classes -> Studentclasses (LEFT JOIN keeps teachers even if no classes/students)
+    # --------------------------------------------------
+    # Query 1: Student count per class per teacher
+    # LEFT JOIN ensures teachers appear even without classes
+    # --------------------------------------------------
     cur.execute("""
         SELECT
             t.teacher_id,
@@ -383,11 +838,22 @@ def teacher_report():
         FROM teachers t
         LEFT JOIN classes c ON c.teacher_id = t.teacher_id
         LEFT JOIN studentclasses sc ON sc.class_id = c.class_id
-        GROUP BY t.teacher_id, t.first_name, t.last_name, c.class_id, c.class_name
-        ORDER BY t.last_name, t.first_name, c.class_name;
+        GROUP BY
+            t.teacher_id,
+            t.first_name,
+            t.last_name,
+            c.class_id,
+            c.class_name
+        ORDER BY
+            t.last_name,
+            t.first_name,
+            c.class_name;
     """)
     rows = cur.fetchall()
 
+    # --------------------------------------------------
+    # Query 2: Total unique students per teacher
+    # --------------------------------------------------
     cur.execute("""
         SELECT
             t.teacher_id,
@@ -401,7 +867,9 @@ def teacher_report():
 
     cur.close()
 
-    # Build report structure for template
+    # --------------------------------------------------
+    # Build structured report for template rendering
+    # --------------------------------------------------
     report = []
     current_tid = None
     teacher_block = None
@@ -409,6 +877,7 @@ def teacher_report():
     for r in rows:
         tid = r['teacher_id']
 
+        # Start new teacher section
         if current_tid != tid:
             current_tid = tid
             teacher_block = {
@@ -420,6 +889,7 @@ def teacher_report():
             }
             report.append(teacher_block)
 
+        # Add class info if class exists
         if r['class_id'] is not None:
             teacher_block['classes'].append({
                 'class_name': r['class_name'],
@@ -427,3 +897,7 @@ def teacher_report():
             })
 
     return render_template("teacher_report.html", report=report)
+
+
+
+

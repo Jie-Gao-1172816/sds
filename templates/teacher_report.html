@@ -3,7 +3,7 @@
 {% block content %}
 
 <h2 class="mb-4">Teacher Report</h2>
-<p class="text-muted">Report size: {{ report|length }}</p>
+
 
 
 {% for teacher in report %}
@@ -15,9 +15,9 @@
         (Total unique students: {{ teacher.total_students }})
       </span>
     </h4>
-
+    <!--teacher report table-->
     <table class="table table-bordered table-sm mt-3">
-      <thead class="table-light">
+      <thead class="table-dark">
         <tr>
           <th>Class Name</th>
           <th>Students Enrolled</th>

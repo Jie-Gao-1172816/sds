@@ -9,9 +9,7 @@
 <!--  Page title-->
 <h2 class="mb-4">Students</h2>
 
-<!-- =========================
-     Search (left) + Add Student (right)
-     ========================= -->
+<!-- Search form + Add Student button-->
 <form method="get" action="{{ url_for('student_list') }}" class="mb-4">
   <div class="d-flex justify-content-between align-items-center">
 
@@ -32,7 +30,7 @@
     </div>
 
     <!-- Add Student button (right side) -->
-    <a href="{{ url_for('edit_student') }}" class="btn btn-dark ">
+    <a href="{{ url_for('add_student') }}" class="btn btn-dark ">
       Add Student
     </a>
 
@@ -41,39 +39,32 @@
 
 
 
-<!-- =========================
-     Student list table
-     - table-hover enables row hover highlighting (Bootstrap only)
-     - table-striped improves readability
-     - align-middle vertically centers cell content
-     ========================= -->
+<!-- Student list table-->
+    
 <table class="table table-striped table-borderless table-hover align-middle">
 
   <!-- Table header -->
   <thead class="table-dark">
-    <tr>
-      <th>Student ID</th>
-      <th>Last Name</th>
-      <th>First Name</th>
-      <th>Email</th>
-      <th>Date of Birth</th>
-      <th>Phone</th>
-      <th>Enrollment Date</th>
-      <th class="text-end">Edit</th>
-    </tr>
-  </thead>
+  <tr>
+  
+    <th class="text-center align-middle text-nowrap">Last Name</th>
+    <th class="text-center align-middle text-nowrap">First Name</th>
+    <th class="text-center align-middle text-nowrap">Email</th>
+    <th class="text-center align-middle text-nowrap">Date of Birth</th>
+    <th class="text-center align-middle text-nowrap">Phone</th>
+    <th class="text-center align-middle text-nowrap">Enrollment Date</th>
+    <th class="text-center align-middle text-nowrap">Edit</th>
+    <th class="text-center align-middle text-nowrap">Enrol in a Class</th>
+  </tr>
+</thead>
 
-  <!-- Table body: loop through students passed from the route -->
+
+ 
   <tbody>
     {% for student in students %}
     <tr>
 
-      <!-- Student ID -->
-      <td>{{ student['student_id'] }}</td>
-
-      <!-- Student last name
-           Styled as black text but remains clickable
-           Hover underline provides visual feedback using Bootstrap -->
+      <!-- Link to student class summary page -->
       <td>
         <a href="{{ url_for('student_class_summary', student_id=student['student_id']) }}"
            class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold">
@@ -81,7 +72,7 @@
         </a>
       </td>
 
-      <!-- Student first name (same behaviour as last name) -->
+     
       <td>
         <a href="{{ url_for('student_class_summary', student_id=student['student_id']) }}"
            class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold">
@@ -89,22 +80,32 @@
         </a>
       </td>
 
-      <!-- Optional student details -->
-      <td>{{ student['email'] }}</td>
-      <td>{{ student['date_of_birth'] }}</td>
-      <td>{{ student['phone'] }}</td>
-      <td>{{ student['enrollment_date'] }}</td>
+      <!--  student details -->
+      <td class="text-center align-middle">{{ student['email'] }}</td>
+      <td class="text-center align-middle">{{ student['date_of_birth'] }}</td>
+      <td class="text-center align-middle">{{ student['phone'] }}</td>
+      <td class="text-center align-middle">{{ student['enrollment_date'] }}</td>
 
-      <!-- Edit button
-           Links to edit_student with the selected student_id -->
-      <td class="text-end">
-        <a href="{{ url_for('edit_student', student_id=student['student_id']) }}"
-           class="btn btn-dark btn-sm">
-          Edit
-        </a>
+      <!-- Edit button Links to edit_student with the selected student_id -->
+      <td class="text-center align-middle">
+        <div class="d-grid col-10 mx-auto">
+          <a class="btn btn-outline-dark btn-sm"
+             href="{{ url_for('edit_student', student_id=student.student_id) }}">
+             Edit
+          </a>
+        </div>
       </td>
 
-    </tr>
+      <!-- Enrol in a Class button Links to student_enrol with the selected student_id -->
+      <td class="text-center align-middle">
+        <div class="d-grid col-10 mx-auto">
+          <a class="btn btn-outline-dark btn-sm text-nowrap"
+             href="{{ url_for('student_enrol', student_id=student.student_id) }}">
+             Enrol in a Class
+          </a>
+        </div>
+      </td>
+
     {% endfor %}
   </tbody>
 </table>

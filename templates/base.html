@@ -51,10 +51,29 @@
             </ul>
           </div>
 
-          <a href="{{ url_for('student_list') }}"
-          class="text-dark text-decoration-none fw-medium">
-          Students
-          </a>
+          <!-- Students dropdown -->
+          <div class="dropdown">
+            <a class="text-dark text-decoration-none fw-medium dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Students
+            </a>
+
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('student_list') }}">
+                  Student List
+                  </a>
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('add_student') }}" >
+                  Add New Student
+                  </a>
+              </li>
+            </ul>
+          </div>
+
+
 
           <a href="{{ url_for('class_list') }}"
           class="text-dark text-decoration-none fw-medium">
