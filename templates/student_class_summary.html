@@ -66,7 +66,7 @@
         </td>
 
         <td>
-          {{ class_row['dance_type'] }}
+          {{ class_row['dancetype_name'] }}
         </td>
 
         <td>
@@ -84,6 +84,33 @@
     </tbody>
   </table>
 </div>
+
+
+
+<!-- Current Grades (from studentgrades) -->
+<h5 class="mt-4">Current Grades</h5>
+
+{% if current_grades and current_grades|length > 0 %}
+  <table class="table table-hover table-borderless align-middle table-sm">
+    <thead class="table-secondary">
+      <tr>
+        <th>Dance Type</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cg in current_grades %}
+        <tr>
+          <td>{{ cg.dancetype_name }}</td>
+          <td>{{ cg.grade_name }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="text-muted">No grades recorded for this student.</div>
+{% endif %}
+
 
 
 {% endif %}

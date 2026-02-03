@@ -10,7 +10,7 @@
   {{ student['last_name'] }}, {{ student['first_name'] }}
 </p>
 
-<!-- If the student has at least one eligible class, show the enrolment form-->
+<!-- If the student has at least one eligible class, show the enrolment form -->
 {% if eligible_classes and eligible_classes|length > 0 %}
 
 <form method="post" action="{{ url_for('student_enrol') }}">
@@ -25,15 +25,23 @@
     </label>
 
     <select name="class_id" class="form-select" required>
+      <!-- Default placeholder option -->
+      <option value="" selected disabled>-- choose --</option>
+
       <!-- Each option represents one eligible class -->
       {% for c in eligible_classes %}
         <option value="{{ c['class_id'] }}">
           {{ c['dancetype_name'] }} - {{ c['class_name'] }}
-          (Grade {{ c['grade_name'] }})
+          ({{ c['grade_name'] }})
           - {{ c['schedule_day'] }} {{ c['schedule_time'] }}
         </option>
       {% endfor %}
     </select>
+
+    <!-- Helper text -->
+    <div class="form-text">
+      Only classes at the student’s current grade level or one level above are shown.
+    </div>
   </div>
 
   <!-- Submit enrolment -->
@@ -49,14 +57,27 @@
 
 </form>
 
-<!-- If no eligible classes are available, display a warning message-->
+<!-- If no eligible classes are available, display a clearer message -->
 {% else %}
 
 <div class="alert alert-warning">
-  No eligible classes available for this student.
+  <strong>No eligible classes available for this student.</strong>
+  <div class="mt-2">
+    Common reasons:
+    <ul class="mb-0">
+      <li>The student has no grade set yet (new student). Please set Student Grades first.</li>
+      <li>All eligible classes have already been enrolled.</li>
+      <li>No classes exist at the student’s current grade level or one level above.</li>
+    </ul>
+  </div>
 </div>
 
-<!-- Back to student class summary -->
+<!-- Action buttons -->
+<a class="btn btn-dark"
+   href="{{ url_for('edit_student', student_id=student['student_id']) }}">
+  Set Grades (Edit Student)
+</a>
+
 <a class="btn btn-outline-dark"
    href="{{ url_for('student_class_summary', student_id=student['student_id']) }}">
   Back

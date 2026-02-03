@@ -616,9 +616,6 @@ def add_student():
 
 @app.route('/student/class-summary')
 def student_class_summary():
-    """
-    Display a summary of classes for a selected student.
-    """
 
     # Step 1: Get student ID from query string
     sid = request.args.get('student_id')
@@ -650,7 +647,26 @@ def student_class_summary():
         return redirect(url_for('student_list'))
 
     # --------------------------------------------------
-    # Step 3: Retrieve classes the student is enrolled in
+    # Step 3: Retrieve student's current grades (studentgrades)
+    # This shows the student's current grade per dance type
+    # --------------------------------------------------
+    cur.execute("""
+        SELECT
+            dt.dancetype_name,
+            g.grade_level,
+            g.grade_name
+        FROM studentgrades sg
+        JOIN dancetype dt ON sg.dancetype_id = dt.dancetype_id
+        JOIN grades g ON sg.grade_id = g.grade_id
+        WHERE sg.student_id = %s
+        ORDER BY
+            dt.dancetype_name,
+            g.grade_level;
+    """, (sid,))
+    current_grades = cur.fetchall()
+
+    # --------------------------------------------------
+    # Step 4: Retrieve classes the student is enrolled in
     # Ordering:
     # - Dance type
     # - Grade level (NULL last)
@@ -677,16 +693,19 @@ def student_class_summary():
             c.class_name;
     """, (sid,))
     classes = cur.fetchall()
+
     cur.close()
 
-    # Step 4: Handle case where student has no classes
+    # Step 5: Handle case where student has no classes
     if not classes:
         flash("This student is not enrolled in any classes.", "warning")
 
     return render_template(
         "student_class_summary.html",
         student=student,
-        classes=classes)
+        classes=classes,
+        current_grades=current_grades)
+
 
   
   
@@ -696,13 +715,11 @@ def student_class_summary():
 # Student Enrolment
 # ==============================
 
+import MySQLdb
+
 @app.route('/student/enrol', methods=['GET', 'POST'])
 def student_enrol():
-    """
-    GET  : Display enrolment form
-    POST : Save student enrolment
-    """
-
+   
     # ----- POST: Save enrolment -----
     if request.method == 'POST':
         sid = request.form.get('student_id')
@@ -710,7 +727,7 @@ def student_enrol():
 
         # Basic validation
         if not sid or not class_id:
-            flash('Please select a student and a class.')
+            flash('Please select a student and a class.', 'danger')
             return redirect(url_for('student_list'))
 
         cur = db.get_cursor()
@@ -722,10 +739,23 @@ def student_enrol():
                 INSERT INTO studentclasses (student_id, class_id)
                 VALUES (%s, %s);
             """, (sid, class_id))
-        except Exception:
-            # Duplicate enrolment (or other DB error)
-            # Do not crash; show a message and continue
-            flash('This student is already enrolled in that class.')
+
+            # IMPORTANT: commit so the insert is saved
+            db.get_db().commit()
+
+            # Success message
+            flash('Enrolment saved successfully.', 'success')
+
+        except MySQLdb.IntegrityError:
+            # Duplicate enrolment (violates UNIQUE(student_id, class_id))
+            db.get_db().rollback()
+            flash('This student is already enrolled in that class.', 'warning')
+
+        except Exception as e:
+            # Other DB error
+            db.get_db().rollback()
+            flash(f'Enrolment failed: {e}', 'danger')
+            print("ENROL ERROR:", e, flush=True)
 
         cur.close()
         return redirect(url_for('student_class_summary', student_id=sid))
@@ -794,8 +824,9 @@ def student_enrol():
         ORDER BY dt.dancetype_name, g.grade_level, c.class_name;
     """, (sid, sid))
     eligible_classes = cur.fetchall()
-    print("DEBUG eligible_classes:", eligible_classes, flush=True)
 
+    # Debug (optional)
+    print("DEBUG eligible_classes:", eligible_classes, flush=True)
 
     cur.close()
 
@@ -803,6 +834,8 @@ def student_enrol():
         'student_enrol.html',
         student=student,
         eligible_classes=eligible_classes)
+
+
 
 
 
