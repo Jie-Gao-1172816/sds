@@ -90,7 +90,7 @@
       <td class="text-center align-middle">
         <div class="d-grid col-10 mx-auto">
           <a class="btn btn-outline-dark btn-sm"
-             href="{{ url_for('edit_student', student_id=student.student_id) }}">
+             href="{{ url_for('edit_student', student_id=student['student_id']) }}">
              Edit
           </a>
         </div>
@@ -100,7 +100,7 @@
       <td class="text-center align-middle">
         <div class="d-grid col-10 mx-auto">
           <a class="btn btn-outline-dark btn-sm text-nowrap"
-             href="{{ url_for('student_enrol', student_id=student.student_id) }}">
+             href="{{ url_for('student_enrol', student_id=student['student_id']) }}">
              Enrol in a Class
           </a>
         </div>

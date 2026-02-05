@@ -127,9 +127,9 @@ def validate_student_form(form):
         errors.append("Date of birth is required.")
     else:
         try:
-            dob = datetime.strptime(dob_raw, "%Y-%m-%d").date()
+            dob = datetime.strptime(dob_raw, "%d-%m-%Y").date()
         except ValueError:
-            errors.append("Date of birth must be in YYYY-MM-DD format.")
+            errors.append("Date of birth must be in DD-MM-YYYY format.")
         else:
             today = date.today()
 
@@ -158,9 +158,9 @@ def validate_student_form(form):
     enrollment_date_raw = (form.get('enrollment_date') or '').strip()
     if enrollment_date_raw:
         try:
-            ed = datetime.strptime(enrollment_date_raw, "%Y-%m-%d").date()
+            ed = datetime.strptime(enrollment_date_raw, "%d-%m-%Y").date()
         except ValueError:
-            errors.append("Enrollment date must be in YYYY-MM-DD format.")
+            errors.append("Enrollment date must be in DD-MM-YYYY format.")
             enrollment_date = None
         else:
             if ed > date.today():
@@ -265,6 +265,12 @@ def student_list():
         cursor.execute(query)
 
     students = cursor.fetchall()
+    for s in students:
+        if s.get("date_of_birth"):
+           s["date_of_birth"] = s["date_of_birth"].strftime("%d/%m/%Y")
+        if s.get("enrollment_date"):
+           s["enrollment_date"] = s["enrollment_date"].strftime("%d/%m/%Y")
+
 
     # Search performed but no results found
     if q and len(students) == 0:

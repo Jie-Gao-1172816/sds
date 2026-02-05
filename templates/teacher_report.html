@@ -10,7 +10,7 @@
 
   <div class="mb-5">
     <h4>
-      {{ teacher.last_name }}, {{ teacher.first_name }}
+      {{ teacher['last_name'] }}, {{ teacher['first_name'] }}
       <span class="text-muted fs-6">
         (Total unique students: {{ teacher.total_students }})
       </span>
@@ -26,7 +26,7 @@
       <tbody>
         {% for c in teacher.classes %}
         <tr>
-          <td>{{ c.class_name }}</td>
+          <td>{{ c.class-name }}</td>
           <td>{{ c.student_count }}</td>
         </tr>
         {% endfor %}

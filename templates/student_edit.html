@@ -16,7 +16,7 @@
 
 <!-- Edit only: student_id cannot be changed, but must be submitted to update the correct record -->
 {% if edit %}
-  <input type="hidden" name="student_id" value="{{ student.student_id }}">
+  <input type="hidden" name="student_id" value="{{ student['student_id'] }}">
 {% endif %}
 
 <!-- Student ID is internal-use only; do not display it to users -->
@@ -24,7 +24,7 @@
 <div class="mb-3">
   <label class="form-label">Student ID</label>
   {% if edit %}
-    <div class="form-control-plaintext">{{ student.student_id }}</div>
+    <div class="form-control-plaintext">{{ student['student_id'] }}</div>
   {% else %}
     <div class="form-control-plaintext text-muted">Auto-generated</div>
   {% endif %}
@@ -56,7 +56,7 @@
     <input type="text"
            class="form-control"
            name="first_name"
-           value="{{ student.first_name or '' }}"
+           value="{{ student['first_name'] or '' }}"
            required
            minlength="2"
            maxlength="50"
@@ -73,7 +73,7 @@
     <input type="text"
            class="form-control"
            name="last_name"
-           value="{{ student.last_name or '' }}"
+           value="{{ student['last_name'] or '' }}"
            required
            minlength="2"
            maxlength="50"

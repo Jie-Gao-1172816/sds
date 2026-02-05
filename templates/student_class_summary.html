@@ -123,12 +123,12 @@
         Back to Student List
     </a>
 
-    <a href="{{ url_for('edit_student', student_id=student.student_id) }}"
+    <a href="{{ url_for('edit_student', student_id=student['student_id']) }}"
        class="btn btn-outline-dark px-4">
         Edit
     </a>
 
-    <a href="{{ url_for('student_enrol', student_id=student.student_id) }}"
+    <a href="{{ url_for('student_enrol', student_id=student['student_id']) }}"
        class="btn btn-dark px-4">
         Enrol in a Class
     </a>
