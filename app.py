@@ -126,10 +126,12 @@ def validate_student_form(form):
     if not dob_raw:
         errors.append("Date of birth is required.")
     else:
-        try:
-            dob = datetime.strptime(dob_raw, "%d-%m-%Y").date()
-        except ValueError:
-            errors.append("Date of birth must be in DD-MM-YYYY format.")
+        try:                  # a date picker will be used from the HTML5 spec,
+                              #so we have to use this format (YYYY-MM-DD) for better validation.
+            dob = datetime.strptime(dob_raw, "%Y-%m-%d").date()
+        except ValueError: 
+            errors.append("Please select a valid date of birth.")
+
         else:
             today = date.today()
 
@@ -158,14 +160,17 @@ def validate_student_form(form):
     enrollment_date_raw = (form.get('enrollment_date') or '').strip()
     if enrollment_date_raw:
         try:
-            ed = datetime.strptime(enrollment_date_raw, "%d-%m-%Y").date()
+            ed = datetime.strptime(enrollment_date_raw, "%Y-%m-%d").date()
         except ValueError:
-            errors.append("Enrollment date must be in DD-MM-YYYY format.")
+            errors.append("Please select a valid enrollment date.")
+
+
             enrollment_date = None
         else:
             if ed > date.today():
-                errors.append("Enrollment date cannot be in the future.")
-                enrollment_date = None
+               errors.append("Enrollment date cannot be in the future.")
+
+               enrollment_date = None
             else:
                 enrollment_date = ed.isoformat()
     else:
