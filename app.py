@@ -265,12 +265,11 @@ def student_list():
         cursor.execute(query)
 
     students = cursor.fetchall()
-    for s in students:
-        if s.get("date_of_birth"):
-           s["date_of_birth"] = s["date_of_birth"].strftime("%d/%m/%Y")
-        if s.get("enrollment_date"):
-           s["enrollment_date"] = s["enrollment_date"].strftime("%d/%m/%Y")
-
+    for stu in students:
+        if stu.get("date_of_birth"):
+           stu["date_of_birth"] = stu["date_of_birth"].strftime("%d/%m/%Y")
+        if stu.get("enrollment_date"):
+           stu["enrollment_date"] = stu["enrollment_date"].strftime("%d/%m/%Y")
 
     # Search performed but no results found
     if q and len(students) == 0:
