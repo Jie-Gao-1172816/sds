@@ -31,96 +31,102 @@
 </div>
 #}
 
-  <!-- Date Joined (Enrollment Date):
-       - Add: defaults to today; user can enter a date up to and including today
-       - Edit: date joined cannot be changed (assignment requirement) -->
-  <div class="mb-3">
-    <label class="form-label">Enrollment Date</label>
-    {% if edit %}
-      <div class="form-control-plaintext">{{ student.enrollment_date }}</div>
-      <div class="form-text">Date joined cannot be changed.</div>
-    {% else %}
+  <!-- Enrollment Date + Date of Birth on one row -->
+  <div class="row">
+    <!-- Date Joined (Enrollment Date):
+         - Add: defaults to today; user can enter a date up to and including today
+         - Edit: date joined cannot be changed (assignment requirement) -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Enrollment Date</label>
+      {% if edit %}
+        <div class="form-control-plaintext">{{ student['enrollment_date'] }}</div>
+        <div class="form-text">Date joined cannot be changed.</div>
+      {% else %}
+        <input type="date"
+               class="form-control"
+               name="enrollment_date"
+               max="{{ today }}"
+               value="{{ today }}"
+               required>
+        <div class="form-text">Must be today or earlier.</div>
+      {% endif %}
+    </div>
+
+    <!-- Date of Birth: cannot be in the future -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Date of Birth* </label>
       <input type="date"
              class="form-control"
-             name="enrollment_date"
-             max="{{ today }}"
-             value="{{ today }}"
-             required>
-      <div class="form-text">Must be today or earlier.</div>
-    {% endif %}
+             name="date_of_birth"
+             value="{{ student['date_of_birth'] or '' }}"
+             min="{{ dob_min }}"
+             max="{{ dob_max }}"
+             required
+             title="Date of birth must be between {{ dob_min }} and {{ dob_max }}.">
+    </div>
   </div>
 
-  <!-- First Name: required; letters only (no numbers); limit length -->
-  <div class="mb-3">
-    <label class="form-label">First Name *</label>
-    <input type="text"
-           class="form-control"
-           name="first_name"
-           value="{{ student['first_name'] or '' }}"
-           required
-           minlength="2"
-           maxlength="50"
-           pattern="[A-Za-z\s'\-]+"
-           title="Letters only. Spaces, hyphen (-) and apostrophe (') allowed. No numbers.">
+  <!-- First + Last Name on one row -->
+  <div class="row">
+    <!-- First Name: required; letters only (no numbers); limit length -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">First Name *</label>
+      <input type="text"
+             class="form-control"
+             name="first_name"
+             value="{{ student['first_name'] or '' }}"
+             required
+             minlength="2"
+             maxlength="50"
+             pattern="[A-Za-z\s'\-]+"
+             title="Letters only. Spaces, hyphen (-) and apostrophe (') allowed. No numbers.">
       <div class="form-text">Letters only (no numbers). Max 50 characters.</div>
-      
-  
-  </div>
+    </div>
 
-  <!-- Last Name: required; letters only (no numbers); limit length -->
-  <div class="mb-3">
-    <label class="form-label">Last Name *</label>
-    <input type="text"
-           class="form-control"
-           name="last_name"
-           value="{{ student['last_name'] or '' }}"
-           required
-           minlength="2"
-           maxlength="50"
-           pattern="[A-Za-z\s'\-]+"
-           title="Letters only. Spaces, hyphen (-) and apostrophe (') allowed. No numbers.">
+    <!-- Last Name: required; letters only (no numbers); limit length -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Last Name *</label>
+      <input type="text"
+             class="form-control"
+             name="last_name"
+             value="{{ student['last_name'] or '' }}"
+             required
+             minlength="2"
+             maxlength="50"
+             pattern="[A-Za-z\s'\-]+"
+             title="Letters only. Spaces, hyphen (-) and apostrophe (') allowed. No numbers.">
       <div class="form-text">Letters only (no numbers). Max 50 characters.</div>
-
+    </div>
   </div>
 
-  <!-- Email: (not all students have email); browser validates format when provided -->
-  <div class="mb-3">
-    <label class="form-label">Email (optional)</label>
-    <input type="email"
-           class="form-control"
-           name="email"
-           value="{{ student.email or '' }}"
-           maxlength="255"
-           title="Optional. Enter a valid email address (e.g., name@example.com). Leave blank if none.">
-    <div class="form-text">Leave blank if the student has no email address.</div>
-  </div>
+  <!-- Email + Phone on one row -->
+  <div class="row">
+    <!-- Email: (not all students have email); browser validates format when provided -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Email (optional)</label>
+      <input type="email"
+             class="form-control"
+             name="email"
+             value="{{ student['email'] or '' }}"
+             maxlength="255"
+             title="Optional. Enter a valid email address (e.g., name@example.com). Leave blank if none.">
+      <div class="form-text">Leave blank if the student has no email address.</div>
+    </div>
 
-  <!-- Phone:  allow digits, spaces, + and -; restrict reasonable length -->
-  <div class="mb-3">
-    <label class="form-label">Phone*</label>
-    <input type="text"
-           class="form-control"
-           name="phone"
-           value="{{ student.phone or '' }}"
-           required
-           minlength="6"
-           maxlength="30"
-           inputmode="tel"
-           pattern="[0-9+\-\s]+"
-           title="Use digits only. Example: 021 123 4567">
-  </div>
-
-  <!-- Date of Birth: cannot be in the future -->
-  <div class="mb-3">
-    <label class="form-label">Date of Birth* </label>
-    <input type="date"
-           class="form-control"
-           name="date_of_birth"
-           value="{{ student.date_of_birth}}"
-           min="{{ dob_min }}"
-           max="{{ dob_max }}"
-           required
-           title="Date of birth must be between {{ dob_min }} and {{ dob_max }}.">
+    <!-- Phone:  allow digits, spaces, + and -; restrict reasonable length -->
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Phone*</label>
+      <input type="text"
+             class="form-control"
+             name="phone"
+             value="{{ student['phone'] or '' }}"
+             required
+             minlength="6"
+             maxlength="30"
+             inputmode="tel"
+             pattern="[0-9+\-\s]+"
+             title="Use digits only. Example: 021 123 4567">
+    </div>
   </div>
 
   <!-- Student Grades:
@@ -128,29 +134,32 @@
        - One dropdown per dance type
        - Options show all grade names
        - name="grade_<dancetype_id>" makes it easy for the server to read selections -->
-  <hr class="my-4">
+<hr class="my-4">
 
-  <h5 class="mb-3">Student Grades</h5>
-  <div class="text-muted mb-3">Select a grade for each dance type.</div>
+<h5 class="mb-3">Student Grades</h5>
+<div class="text-muted mb-3">Select a grade for each dance type.</div>
 
+<div class="row">
   {% for dt in dancetypes %}
-    <div class="mb-3">
-      <label class="form-label">{{ dt.dancetype_name }}</label>
+    <div class="col-md-6 mb-3">
+      <label class="form-label">{{ dt['dancetype_name'] }}</label>
 
       <!-- Each select is keyed by dance type id (e.g., grade_1, grade_2, ...) -->
-      <select class="form-select" name="grade_{{ dt.dancetype_id }}">
+      <select class="form-select" name="grade_{{ dt['dancetype_id'] }}">
         <option value="">-- Not set --</option>
 
         <!-- List all grades; pre-select the current grade for this dance type if it exists -->
         {% for g in grades %}
-          <option value="{{ g.grade_id }}"
-            {% if student_grades.get(dt.dancetype_id) == g.grade_id %}selected{% endif %}>
-            {{ g.grade_name }}
+          <option value="{{ g['grade_id'] }}"
+            {% if student_grades.get(dt['dancetype_id']) == g['grade_id'] %}selected{% endif %}>
+            {{ g['grade_name'] }}
           </option>
         {% endfor %}
       </select>
     </div>
   {% endfor %}
+</div>
+
 
   <!-- Submit and Cancel controls -->
   <div class="d-flex gap-3 mt-4">
