@@ -63,6 +63,7 @@
              max="{{ dob_max }}"
              required
              title="Date of birth must be between {{ dob_min }} and {{ dob_max }}.">
+      <div class="form-text">Age must be between 1 and 20.</div>
     </div>
   </div>
 
@@ -115,7 +116,7 @@
 
     <!-- Phone:  allow digits, spaces, + and -; restrict reasonable length -->
     <div class="col-md-6 mb-3">
-      <label class="form-label">Phone*</label>
+      <label class="form-label">Mobile*</label>
       <input type="text"
              class="form-control"
              name="phone"
@@ -126,6 +127,7 @@
              inputmode="tel"
              pattern="[0-9+\-\s]+"
              title="Use digits only. Example: 021 123 4567">
+      <div class="form-text">Digits only. Example: 021 123 4567.</div>
     </div>
   </div>
 
